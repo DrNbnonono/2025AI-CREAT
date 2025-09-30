@@ -1,0 +1,347 @@
+# AI+中国优秀传统文化 - 沉浸式文化遗产体验
+
+> 运用 AI 技术与 Three.js 3D 场景打造的第一人称文化遗产探索体验
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## 📖 项目简介
+
+这是一个为"AI+中国优秀传统文化"比赛设计的交互式 Web 应用，通过第一人称视角，让用户沉浸式地探索中国传统文化遗产。当走近文物时，AI 会自动进行讲解，用户还可以随时向 AI 提问，获得个性化的文化知识解答。
+
+### ✨ 核心特性
+
+- 🎮 **第一人称自由探索** - 使用 WASD/方向键移动，鼠标环顾四周
+- 🏺 **智能触发系统** - 靠近文物自动触发 AI 讲解
+- 🤖 **AI 智能导览** - 支持实时对话，回答关于文物的任何问题
+- 🎨 **精美 3D 场景** - 基于 Three.js 构建的逼真环境
+- 📱 **响应式设计** - 支持桌面端和移动端
+- ⚡ **高性能优化** - 采用 LOD、压缩等技术确保流畅运行
+
+## 🚀 快速开始
+
+### 环境要求
+
+- Node.js 16.0 或更高版本
+- npm 或 yarn 包管理器
+
+### 安装步骤
+
+1. **克隆项目**
+
+```bash
+git clone <your-repo-url>
+cd 2025AI+
+```
+
+2. **安装依赖**
+
+```bash
+npm install
+# 或
+yarn install
+```
+
+3. **配置 AI API（可选）**
+
+复制 `.env.example` 为 `.env` 并填入您的 AI API 配置：
+
+```bash
+cp .env.example .env
+```
+
+编辑 `.env` 文件：
+
+```env
+VITE_AI_API_KEY=your_api_key_here
+VITE_AI_BASE_URL=https://api.openai.com/v1
+VITE_AI_MODEL=gpt-3.5-turbo
+VITE_AI_PROVIDER=openai
+```
+
+**注意**：如果不配置 API Key，系统会使用内置的智能模拟回复进行演示。
+
+4. **启动开发服务器**
+
+```bash
+npm run dev
+# 或
+yarn dev
+```
+
+5. **访问应用**
+
+打开浏览器访问 `http://localhost:3000`
+
+### 生产构建
+
+```bash
+npm run build
+# 或
+yarn build
+```
+
+构建完成后，可以使用以下命令预览：
+
+```bash
+npm run preview
+# 或
+yarn preview
+```
+
+## 🎮 使用指南
+
+### 控制方式
+
+**移动控制：**
+- `W` / `↑` - 向前移动
+- `S` / `↓` - 向后移动
+- `A` / `←` - 向左移动
+- `D` / `→` - 向右移动
+- `Space` - 跳跃
+- `鼠标` - 环顾四周
+- `ESC` - 解除鼠标锁定
+
+**交互控制：**
+- 点击屏幕 - 进入第一人称视角
+- 点击"AI 对话"按钮 - 打开/关闭对话面板
+- 点击"帮助"按钮 - 查看操作说明
+
+### 探索体验
+
+1. **开始探索** - 点击"开始探索"按钮，然后点击屏幕进入第一人称视角
+2. **寻找文物** - 在场景中移动，寻找三件传统文化文物
+3. **AI 自动讲解** - 走近文物时，AI 会自动介绍相关知识
+4. **提问互动** - 在 AI 对话框中输入问题，获得详细解答
+5. **完成探索** - 收集所有文物的访问标记
+
+## 🏗️ 技术架构
+
+### 技术栈
+
+- **前端框架**: React 18 + TypeScript
+- **构建工具**: Vite 5
+- **3D 引擎**: Three.js + React Three Fiber
+- **状态管理**: Zustand
+- **HTTP 客户端**: Axios
+- **样式**: CSS3 + 自定义动画
+
+### 项目结构
+
+```
+2025AI+/
+├── public/                      # 静态资源目录
+│   ├── models/                  # 3D 模型文件（GLB/GLTF）
+│   │   └── .gitkeep
+│   └── vite.svg                 # 网站图标
+│
+├── src/                         # 源代码目录
+│   ├── components/              # React 组件
+│   │   ├── UI/                  # UI 层组件
+│   │   │   ├── UI.tsx              # UI 主容器
+│   │   │   ├── UI.css
+│   │   │   ├── ChatPanel.tsx       # AI 对话面板
+│   │   │   ├── ChatPanel.css
+│   │   │   ├── Instructions.tsx    # 操作说明
+│   │   │   ├── Instructions.css
+│   │   │   ├── SceneInfo.tsx       # 场景信息面板
+│   │   │   ├── SceneInfo.css
+│   │   │   ├── Controls.tsx        # 控制按钮
+│   │   │   ├── Controls.css
+│   │   │   ├── LoadingScreen.tsx   # 加载屏幕
+│   │   │   └── LoadingScreen.css
+│   │   │
+│   │   ├── Scene.tsx               # Three.js 主场景容器
+│   │   ├── Experience.tsx          # 核心体验逻辑（更新、触发检测）
+│   │   ├── FirstPersonControls.tsx # 第一人称控制器（移动、跳跃）
+│   │   ├── SceneEnvironment.tsx    # 场景环境（地面、文物、装饰）
+│   │   └── TriggerZones.tsx        # 触发区域可视化（开发用）
+│   │
+│   ├── services/                # 服务层
+│   │   └── aiService.ts         # AI API 服务（支持多种 AI 提供商）
+│   │
+│   ├── store/                   # 全局状态管理
+│   │   └── useStore.ts          # Zustand store（玩家、场景、AI 状态）
+│   │
+│   ├── App.tsx                  # 应用根组件
+│   ├── App.css
+│   ├── main.tsx                 # 应用入口
+│   └── index.css                # 全局样式
+│
+├── .env.example                 # 环境变量配置示例
+├── .gitignore                   # Git 忽略文件
+├── DEPLOYMENT.md                # 部署指南
+├── ENV_CONFIG.md                # 环境配置详细说明
+├── README.md                    # 项目说明文档（本文件）
+├── index.html                   # HTML 入口
+├── package.json                 # 项目依赖和脚本
+├── tsconfig.json                # TypeScript 配置
+├── tsconfig.node.json           # TypeScript Node 配置
+└── vite.config.ts               # Vite 构建配置
+```
+
+**目录说明：**
+
+- **`src/components/`**: 所有 React 组件
+  - **`UI/`**: 用户界面组件（对话框、按钮、说明等）
+  - **场景组件**: Three.js 相关的 3D 场景组件
+- **`src/services/`**: 业务逻辑服务（AI API 调用等）
+- **`src/store/`**: 全局状态管理（玩家位置、场景点位、消息等）
+- **`public/models/`**: 存放 3D 模型文件（支持 GLB/GLTF 格式）
+
+### 核心系统
+
+#### 1. 场景触发器系统
+
+自动检测玩家位置，当进入文物的触发半径时：
+- 显示场景信息面板
+- 自动弹出 AI 讲解
+- 标记文物为已访问
+
+#### 2. AI 对话系统
+
+- 支持 OpenAI 兼容 API
+- 内置智能模拟回复（无需配置即可演示）
+- 上下文感知，基于当前场景提供准确信息
+- 对话历史管理
+
+#### 3. 第一人称控制器
+
+- 基于 PointerLockControls
+- 平滑移动和视角控制
+- 重力和跳跃物理
+- 地面碰撞检测
+
+## 🎨 场景文物
+
+当前包含三件传统文化文物：
+
+1. **商代青铜鼎** 🏺
+   - 位置：场景中央
+   - 特点：失蜡法铸造，饕餮纹饰
+   - 文化价值：礼器，权力象征
+
+2. **唐代丝绸画卷** 📜
+   - 位置：场景左侧
+   - 特点：精美织锦，色彩艳丽
+   - 文化价值：丝绸之路的见证
+
+3. **战国玉璧** 💍
+   - 位置：场景右侧
+   - 特点：温润如玉，工艺精湛
+   - 文化价值：君子比德于玉
+
+## 🔧 自定义与扩展
+
+### 添加新的场景点位
+
+编辑 `src/store/useStore.ts`，在 `scenePoints` 数组中添加新对象：
+
+```typescript
+{
+  id: 'your-artifact-id',
+  name: '文物名称',
+  position: new Vector3(x, y, z),
+  radius: 3,
+  description: '简短描述',
+  aiContext: '详细的 AI 知识库内容...',
+  visited: false,
+}
+```
+
+### 添加 3D 模型
+
+1. 将 GLB/GLTF 模型文件放入 `public/models/` 目录
+2. 在 `SceneEnvironment.tsx` 中使用 `useGLTF` 加载模型
+3. 建议使用 Draco 压缩以减小文件大小
+
+### 更换 AI 服务
+
+支持任何 OpenAI 兼容的 API，只需在 `.env` 中配置：
+
+**Ollama 本地模型（推荐用于开发）：**
+```env
+VITE_AI_BASE_URL=http://localhost:11434/v1
+VITE_AI_MODEL=qwen2.5:7b
+VITE_AI_PROVIDER=ollama
+# 注意：Ollama 不需要 API Key
+```
+
+**如何使用 Ollama：**
+1. 访问 https://ollama.com/download 下载安装
+2. 运行 `ollama pull qwen2.5:7b` 下载模型
+3. 确保 Ollama 服务正在运行（通常自动启动）
+4. 配置 `.env` 文件为上述 Ollama 配置
+5. 启动项目即可使用本地 AI
+
+**通义千问示例：**
+```env
+VITE_AI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+VITE_AI_API_KEY=your_tongyi_api_key
+VITE_AI_MODEL=qwen-turbo
+VITE_AI_PROVIDER=tongyi
+```
+
+**OpenAI GPT：**
+```env
+VITE_AI_BASE_URL=https://api.openai.com/v1
+VITE_AI_API_KEY=sk-your_openai_key
+VITE_AI_MODEL=gpt-3.5-turbo
+VITE_AI_PROVIDER=openai
+```
+
+## 📱 兼容性
+
+- ✅ Chrome 90+
+- ✅ Firefox 88+
+- ✅ Safari 14+
+- ✅ Edge 90+
+- ⚠️ 移动端浏览器（功能正常，但体验更适合桌面端）
+
+## 🎯 性能优化建议
+
+1. **3D 模型优化**
+   - 使用 GLB 格式并启用 Draco 压缩
+   - 控制模型面数（推荐 < 50K 三角面）
+   - 使用 LOD（细节层次）技术
+
+2. **纹理优化**
+   - 使用 WebP 格式
+   - 纹理尺寸不超过 2048x2048
+   - 启用 mipmap
+
+3. **代码优化**
+   - 已实现代码分割（three-vendor chunk）
+   - 使用 React.memo 减少不必要的重渲染
+   - 避免在每帧中创建新对象
+
+## 🐛 常见问题
+
+### Q: 第一人称视角无法进入？
+A: 确保点击了屏幕，现代浏览器需要用户交互才能锁定指针。
+
+### Q: AI 没有回复？
+A: 检查是否配置了 API Key。如果没有配置，会使用内置的模拟回复。
+
+### Q: 场景加载很慢？
+A: 3D 模型可能太大，建议使用 Draco 压缩或减少模型复杂度。
+
+### Q: 移动端无法正常使用？
+A: 第一人称控制更适合桌面端，移动端建议添加虚拟摇杆控制。
+
+## 📄 许可证
+
+MIT License
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 📞 联系方式
+
+如有问题或建议，请通过以下方式联系：
+- 提交 GitHub Issue
+- 发送邮件到：[your-email]
+
+---
+
+**祝您探索愉快！🎉**

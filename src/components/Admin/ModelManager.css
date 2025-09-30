@@ -1,0 +1,242 @@
+.model-manager {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  width: 420px;
+  max-height: 70vh;
+  background: rgba(26, 32, 44, 0.95);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  z-index: 999;
+  overflow: hidden;
+  resize: both; /* 可拖拽拉伸 */
+}
+
+.model-manager:hover {
+  overflow: auto;
+}
+
+.manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.manager-header h3 {
+  margin: 0;
+  color: #FFD700;
+  font-size: 18px;
+}
+
+.current-scene {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.model-list {
+  margin-bottom: 16px;
+}
+
+.model-list h4 {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0 0 12px 0;
+}
+
+.model-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.model-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.model-info strong {
+  color: #fff;
+  font-size: 14px;
+}
+
+.model-position {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'Courier New', monospace;
+}
+
+.model-path {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  word-break: break-all;
+}
+
+.model-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-edit,
+.btn-delete {
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-edit {
+  background: rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+}
+
+.btn-edit:hover {
+  background: rgba(59, 130, 246, 0.5);
+}
+
+.btn-delete {
+  background: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+.btn-delete:hover {
+  background: rgba(239, 68, 68, 0.5);
+}
+
+.btn-add-model {
+  width: 100%;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  letter-spacing: 0.5px;
+}
+
+.btn-add-model:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* 添加表单 */
+.add-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.add-form {
+  background: rgba(26, 32, 44, 0.95);
+  border-radius: 12px;
+  padding: 30px;
+  width: 720px;
+  max-width: 95%;
+  max-height: 85vh;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.add-form h3 {
+  margin: 0 0 24px 0;
+  color: #FFD700;
+  font-size: 20px;
+}
+
+.form-field {
+  margin-bottom: 20px;
+}
+
+.form-field label {
+  display: block;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.form-field input,
+.form-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.form-field input:focus,
+.form-field textarea:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 215, 0, 0.5);
+}
+
+.position-inputs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-save,
+.btn-cancel {
+  flex: 1;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.btn-save:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px);
+}
+
+.btn-cancel {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+}

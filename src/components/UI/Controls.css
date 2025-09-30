@@ -1,0 +1,98 @@
+.controls-container {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 100;
+}
+
+.control-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  background: rgba(20, 20, 20, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  min-width: 120px;
+}
+
+.control-button:hover {
+  background: rgba(40, 40, 40, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateX(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.control-button.active {
+  background: rgba(30, 30, 30, 0.95);
+  border-color: rgba(255, 215, 0, 0.6);
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
+}
+
+.control-icon {
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.9;
+}
+
+.control-label {
+  font-size: 13px;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+.active-indicator {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  background: #FFD700;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.6);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .controls-container {
+    bottom: 60px;
+    right: 10px;
+  }
+  
+  .control-button {
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+  
+  .control-icon {
+    font-size: 14px;
+  }
+  
+  .control-label {
+    display: none;
+  }
+}
