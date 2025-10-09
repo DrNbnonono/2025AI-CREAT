@@ -30,6 +30,9 @@ interface GameState {
   currentPoint: ScenePoint | null
   showSceneSelector: boolean
   isTransitioning: boolean
+  // Admin selection / placement
+  selectedPointId: string | null
+  placingModelPath: string | null
   
   // AI对话
   messages: Message[]
@@ -54,6 +57,9 @@ interface GameState {
   // 模型点位编辑
   addScenePoint: (point: ScenePointData) => void
   deleteScenePoint: (pointId: string) => void
+  updateScenePoint: (pointId: string, partial: Partial<ScenePointData>) => void
+  setSelectedPoint: (pointId: string | null) => void
+  setPlacingModelPath: (path: string | null) => void
   switchScene: (theme: SceneThemeType) => void
   setShowSceneSelector: (show: boolean) => void
   setIsTransitioning: (transitioning: boolean) => void
@@ -107,6 +113,8 @@ export const useStore = create<GameState>((set, get) => ({
   scenePoints: initializeScenePoints('museum'),
   showSceneSelector: false,
   isTransitioning: false,
+  selectedPointId: null,
+  placingModelPath: null,
   
   currentPoint: null,
   messages: [],
@@ -215,6 +223,7 @@ export const useStore = create<GameState>((set, get) => ({
     set((state) => ({
       scenePoints: state.scenePoints.filter(p => p.id !== pointId),
       currentPoint: state.currentPoint?.id === pointId ? null : state.currentPoint,
+      selectedPointId: state.selectedPointId === pointId ? null : state.selectedPointId,
     }))
     // 更新本地覆盖
     const overrides = loadOverrides()
@@ -227,6 +236,32 @@ export const useStore = create<GameState>((set, get) => ({
     }
     saveOverrides(overrides)
   },
+
+  // 更新场景点位
+  updateScenePoint: (pointId, partial) => {
+    const theme = get().currentTheme
+    set((state) => ({
+      scenePoints: state.scenePoints.map(p => p.id === pointId ? { ...p, ...partial, position: partial.position ?? p.position } : p),
+    }))
+    // 更新覆盖
+    const overrides = loadOverrides()
+    let list = overrides.custom[theme] || []
+    const idx = list.findIndex(p => p.id === pointId)
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], ...partial, position: partial.position ?? list[idx].position }
+    } else {
+      // 如果原本是内置点，写入一条覆盖条目
+      const base = sceneDataMap[theme].find(p => p.id === pointId)
+      if (base) {
+        list = [...list, { ...base, ...partial, position: partial.position ?? base.position }]
+      }
+    }
+    overrides.custom[theme] = list
+    saveOverrides(overrides)
+  },
+
+  setSelectedPoint: (pointId) => set({ selectedPointId: pointId }),
+  setPlacingModelPath: (path) => set({ placingModelPath: path }),
   
   setShowSceneSelector: (show) => set({ showSceneSelector: show }),
   setIsTransitioning: (transitioning) => set({ isTransitioning: transitioning }),

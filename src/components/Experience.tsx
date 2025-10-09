@@ -2,7 +2,10 @@ import { useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Vector3 } from 'three'
 import { useStore } from '../store/useStore'
+import { useAdminStore } from '../store/useAdminStore'
 import FirstPersonControls from './FirstPersonControls'
+import EditorControls from './EditorControls'
+import ModelPlacementHelper from './ModelPlacementHelper'
 import SceneEnvironment from './SceneEnvironment'
 import TriggerZones from './TriggerZones'
 
@@ -13,6 +16,7 @@ export default function Experience() {
   const setCurrentPoint = useStore((state) => state.setCurrentPoint)
   const markPointVisited = useStore((state) => state.markPointVisited)
   const scenePoints = useStore((state) => state.scenePoints)
+  const isEditMode = useAdminStore((state) => state.isEditMode)
   
   const controlsRef = useRef<any>(null)
   
@@ -52,8 +56,15 @@ export default function Experience() {
   
   return (
     <>
-      {/* 第一人称控制器 */}
-      <FirstPersonControls ref={controlsRef} />
+      {/* 控制器切换：编辑模式 vs 游客模式 */}
+      {isEditMode ? (
+        <>
+          <EditorControls />
+          <ModelPlacementHelper />
+        </>
+      ) : (
+        <FirstPersonControls ref={controlsRef} />
+      )}
       
       {/* 场景环境（地面、文物等） */}
       <SceneEnvironment />

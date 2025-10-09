@@ -1,7 +1,9 @@
-import { useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
-import { Text, Box, Sphere, Cylinder, useGLTF } from '@react-three/drei'
+import { useRef, useState, useEffect, useMemo } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
+import { Text, Box, Sphere, Cylinder, useGLTF, TransformControls } from '@react-three/drei'
 import { useStore } from '../store/useStore'
+import { useAdminStore } from '../store/useAdminStore'
+import { useTransformMode } from './Admin/EditorToolbar'
 import * as THREE from 'three'
 
 export default function SceneEnvironment() {
@@ -39,35 +41,76 @@ export default function SceneEnvironment() {
 
 // 文物展示组件
 function ArtifactDisplay({ point }: { point: any }) {
+  const groupRef = useRef<THREE.Group>(null)
   const meshRef = useRef<THREE.Mesh>(null)
   const currentPoint = useStore((state) => state.currentPoint)
   const isActive = currentPoint?.id === point.id
   
-  // 旋转动画
+  const isEditMode = useAdminStore((s) => s.isEditMode)
+  const selectedPointId = useStore((s) => s.selectedPointId)
+  const setSelectedPoint = useStore((s) => s.setSelectedPoint)
+  const updateScenePoint = useStore((s) => s.updateScenePoint)
+  const transformMode = useTransformMode()
+  
+  const isSelected = selectedPointId === point.id
+  const [isDragging, setIsDragging] = useState(false)
+  
+  // 旋转动画（编辑模式下禁用）
   useFrame((state, delta) => {
-    if (meshRef.current) {
+    if (!isEditMode && meshRef.current) {
       meshRef.current.rotation.y += delta * 0.3
     }
   })
   
+  // 点击选择（仅编辑模式）
+  const handleClick = (e: any) => {
+    if (!isEditMode) return
+    e.stopPropagation()
+    setSelectedPoint(point.id)
+  }
+  
+  // TransformControls 变化时更新位置
+  const handleTransformChange = () => {
+    if (!groupRef.current || !isEditMode || !isSelected) return
+    const pos = groupRef.current.position
+    updateScenePoint(point.id, {
+      position: new THREE.Vector3(pos.x, pos.y, pos.z),
+    })
+  }
+  
   // 如果存在模型路径，优先渲染 GLTF/GLB 模型
   if (point.modelPath) {
     return (
-      <group position={[point.position.x, 0, point.position.z]}>
-        <ModelObject url={point.modelPath} highlight={isActive} name={point.name} />
-        {/* 标签 */}
-        <Text
-          position={[0, 2, 0]}
-          fontSize={0.3}
-          color={isActive ? '#FFD700' : '#ffffff'}
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={0.02}
-          outlineColor="#000000"
-        >
-          {point.name}
-        </Text>
-      </group>
+      <>
+        <group ref={groupRef} position={[point.position.x, point.position.y || 0, point.position.z]} onClick={handleClick}>
+          <ModelObject url={point.modelPath} highlight={isActive || isSelected} name={point.name} />
+          {/* 标签 */}
+          <Text
+            position={[0, 2, 0]}
+            fontSize={0.3}
+            color={isActive || isSelected ? '#FFD700' : '#ffffff'}
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.02}
+            outlineColor="#000000"
+          >
+            {point.name}
+          </Text>
+        </group>
+        
+        {/* TransformControls（仅编辑模式且选中时） */}
+        {isEditMode && isSelected && groupRef.current && (
+          <TransformControls
+            object={groupRef.current}
+            mode={transformMode}
+            onMouseDown={() => setIsDragging(true)}
+            onMouseUp={() => {
+              setIsDragging(false)
+              handleTransformChange()
+            }}
+          />
+        )}
+      </>
     )
   }
 
@@ -164,65 +207,90 @@ function ArtifactDisplay({ point }: { point: any }) {
   }
   
   return (
-    <group position={[point.position.x, 1.5, point.position.z]}>
-      {/* 文物模型 */}
-      {getArtifactGeometry()}
+    <>
+      <group ref={groupRef} position={[point.position.x, 1.5, point.position.z]} onClick={handleClick}>
+        {/* 文物模型 */}
+        {getArtifactGeometry()}
+        
+        {/* 底座 */}
+        <Cylinder
+          args={[1.5, 1.5, 0.3, 32]}
+          position={[0, -1.35, 0]}
+          castShadow
+        >
+          <meshStandardMaterial
+            color={isActive || isSelected ? '#FFD700' : '#4a5568'}
+            roughness={0.5}
+            metalness={0.5}
+            emissive={isActive || isSelected ? '#FFD700' : '#000000'}
+            emissiveIntensity={isActive || isSelected ? 0.2 : 0}
+          />
+        </Cylinder>
+        
+        {/* 标签 */}
+        <Text
+          position={[0, 2, 0]}
+          fontSize={0.3}
+          color={isActive || isSelected ? '#FFD700' : '#ffffff'}
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.02}
+          outlineColor="#000000"
+        >
+          {point.name}
+        </Text>
+        
+        {/* 访问标记 */}
+        {point.visited && (
+          <Sphere args={[0.15, 16, 16]} position={[0, 2.5, 0]}>
+            <meshBasicMaterial color="#00ff00" />
+          </Sphere>
+        )}
+      </group>
       
-      {/* 底座 */}
-      <Cylinder
-        args={[1.5, 1.5, 0.3, 32]}
-        position={[0, -1.35, 0]}
-        castShadow
-      >
-        <meshStandardMaterial
-          color={isActive ? '#FFD700' : '#4a5568'}
-          roughness={0.5}
-          metalness={0.5}
-          emissive={isActive ? '#FFD700' : '#000000'}
-          emissiveIntensity={isActive ? 0.2 : 0}
+      {/* TransformControls（仅编辑模式且选中时） */}
+      {isEditMode && isSelected && groupRef.current && (
+        <TransformControls
+          object={groupRef.current}
+          mode={transformMode}
+          onMouseDown={() => setIsDragging(true)}
+          onMouseUp={() => {
+            setIsDragging(false)
+            handleTransformChange()
+          }}
         />
-      </Cylinder>
-      
-      {/* 标签 */}
-      <Text
-        position={[0, 2, 0]}
-        fontSize={0.3}
-        color={isActive ? '#FFD700' : '#ffffff'}
-        anchorX="center"
-        anchorY="middle"
-        outlineWidth={0.02}
-        outlineColor="#000000"
-      >
-        {point.name}
-      </Text>
-      
-      {/* 访问标记 */}
-      {point.visited && (
-        <Sphere args={[0.15, 16, 16]} position={[0, 2.5, 0]}>
-          <meshBasicMaterial color="#00ff00" />
-        </Sphere>
       )}
-    </group>
+    </>
   )
 }
 
-// 加载 GLTF/GLB 模型
+// 加载 GLTF/GLB 模型（性能优化版本）
 function ModelObject({ url, highlight, name }: { url: string; highlight: boolean; name: string }) {
   const { scene } = useGLTF(url) as any
-  // 基础材质增强：高亮时轻微自发光
-  scene.traverse((obj: any) => {
-    if (obj.isMesh && obj.material) {
-      obj.castShadow = true
-      obj.receiveShadow = true
-      if (obj.material.emissive) {
-        obj.material.emissive = new THREE.Color(highlight ? '#FFD700' : '#000000')
-        obj.material.emissiveIntensity = highlight ? 0.15 : 0
+  const meshRef = useRef<THREE.Group>()
+  
+  // 仅在高亮变化时更新材质（性能优化）
+  useEffect(() => {
+    if (!meshRef.current) return
+    
+    meshRef.current.traverse((obj: any) => {
+      if (obj.isMesh && obj.material) {
+        obj.castShadow = true
+        obj.receiveShadow = true
+        if (obj.material.emissive) {
+          obj.material.emissive = new THREE.Color(highlight ? '#FFD700' : '#000000')
+          obj.material.emissiveIntensity = highlight ? 0.15 : 0
+          obj.material.needsUpdate = true
+        }
       }
-    }
-  })
-  // 统一缩放到合适体量（简化处理）
+    })
+  }, [highlight])
+  
+  // 克隆场景以支持多实例（性能优化：复用几何体）
+  const clonedScene = useMemo(() => scene.clone(), [scene])
+  
   const s = 1
-  return <primitive object={scene} scale={[s, s, s]} />
+  return <primitive ref={meshRef} object={clonedScene} scale={[s, s, s]} />
 }
 
 // 环境装饰

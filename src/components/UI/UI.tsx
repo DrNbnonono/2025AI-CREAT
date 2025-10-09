@@ -7,6 +7,9 @@ import Controls from './Controls'
 import SceneSelector from './SceneSelector'
 import SceneTransition from './SceneTransition'
 import ModelManager from '../Admin/ModelManager'
+import ModelLibraryPanel from '../Admin/ModelLibraryPanel'
+import EditorToolbar from '../Admin/EditorToolbar'
+import PropertyPanel from '../Admin/PropertyPanel'
 import './UI.css'
 
 export default function UI() {
@@ -58,7 +61,10 @@ export default function UI() {
       {/* 控制按钮 */}
       <Controls />
       
-      {/* 管理员模型管理器 */}
+      {/* 管理员工具 */}
+      {isEditMode && <EditorToolbar />}
+      {isEditMode && <ModelLibraryPanel />}
+      {isEditMode && <PropertyPanel />}
       {isEditMode && <ModelManager />}
       
       {/* 标题和信息 */}
