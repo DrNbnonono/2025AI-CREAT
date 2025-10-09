@@ -113,7 +113,7 @@ export default function ModelManager() {
       <div className="manager-actions">
         <button className="action-btn" onClick={() => setShowAddForm(true)}>➕ 添加点位</button>
         <button className="action-btn" onClick={handleExport}>📤 导出配置</button>
-        <button className="action-btn" onClick={() => document.getElementById('scene-import-input')?.click()}>📥 导入配置</button>
+        <button className="action-btn" onClick={() => importInputRef.current?.click()}>📥 导入配置</button>
         <button className="action-btn" onClick={() => setShowSceneForm(true)}>🆕 新建场景</button>
         <input
           id="scene-import-input"

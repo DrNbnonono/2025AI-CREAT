@@ -60,6 +60,7 @@
   overflow-y: auto;
   margin-bottom: 16px;
   padding-right: 4px;
+  min-height: 120px;
 }
 
 .model-list h4 {
