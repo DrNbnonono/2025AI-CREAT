@@ -113,7 +113,7 @@ export default function ModelManager() {
       <div className="manager-actions">
         <button className="action-btn" onClick={() => setShowAddForm(true)}>➕ 添加点位</button>
         <button className="action-btn" onClick={handleExport}>📤 导出配置</button>
-        <button className="action-btn" onClick={() => importInputRef.current?.click()}>📥 导入配置</button>
+        <button className="action-btn" onClick={() => document.getElementById('scene-import-input')?.click()}>📥 导入配置</button>
         <button className="action-btn" onClick={() => setShowSceneForm(true)}>🆕 新建场景</button>
         <input
           id="scene-import-input"
@@ -130,26 +130,28 @@ export default function ModelManager() {
           }}
         />
       </div>
-      
-      <div className="model-list">
-        <h4>场景点位列表</h4>
-        {scenePoints.map((point) => (
-          <div key={point.id} className="model-item">
-            <div className="model-info">
-              <strong>{point.name}</strong>
-              <span className="model-position">
-                ({point.position.x.toFixed(1)}, {point.position.y.toFixed(1)}, {point.position.z.toFixed(1)})
-              </span>
-              {point.modelPath && (
-                <span className="model-path">{point.modelPath}</span>
-              )}
+
+      <div className="model-manager-content">
+        <div className="model-list">
+          <h4>场景点位列表</h4>
+          {scenePoints.map((point) => (
+            <div key={point.id} className="model-item">
+              <div className="model-info">
+                <strong>{point.name}</strong>
+                <span className="model-position">
+                  ({point.position.x.toFixed(1)}, {point.position.y.toFixed(1)}, {point.position.z.toFixed(1)})
+                </span>
+                {point.modelPath && (
+                  <span className="model-path">{point.modelPath}</span>
+                )}
+              </div>
+              <div className="model-actions">
+                <button className="btn-edit">编辑</button>
+                <button className="btn-delete" onClick={() => deleteScenePoint(point.id)}>删除</button>
+              </div>
             </div>
-            <div className="model-actions">
-              <button className="btn-edit">编辑</button>
-              <button className="btn-delete" onClick={() => deleteScenePoint(point.id)}>删除</button>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
       
       {showAddForm && (

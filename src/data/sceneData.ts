@@ -14,6 +14,38 @@ export interface ScenePointData {
   scale?: number
 }
 
+export interface SceneMeta {
+  id: string
+  name: string
+  description: string
+  icon?: string
+  items?: string[]
+}
+
+export const defaultSceneMeta: Record<string, SceneMeta> = {
+  museum: {
+    id: 'museum',
+    name: '博物馆',
+    description: '探索中国传统文物，了解悠久历史',
+    icon: '🏺',
+    items: ['商代青铜鼎', '唐代丝绸画卷', '战国玉璧'],
+  },
+  redMansion: {
+    id: 'redMansion',
+    name: '红楼梦',
+    description: '走进大观园，体验红楼梦的诗意世界',
+    icon: '🏮',
+    items: ['大观园正门', '怡红院', '潇湘馆'],
+  },
+  silkRoad: {
+    id: 'silkRoad',
+    name: '丝绸之路',
+    description: '穿越古丝绸之路，见证东西文化交流',
+    icon: '🐫',
+    items: ['长安城', '敦煌莫高窟', '撒马尔罕'],
+  },
+}
+
 // 博物馆场景
 export const museumScenePoints: ScenePointData[] = [
   {
@@ -302,7 +334,7 @@ export const silkRoadScenePoints: ScenePointData[] = [
 ]
 
 // 导出所有场景数据
-export const sceneDataMap = {
+export const sceneDataMap: Record<string, ScenePointData[]> = {
   museum: museumScenePoints,
   redMansion: redMansionScenePoints,
   silkRoad: silkRoadScenePoints,

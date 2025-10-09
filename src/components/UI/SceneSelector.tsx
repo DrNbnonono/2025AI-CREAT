@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { useStore } from '../../store/useStore'
 import type { SceneThemeType } from '../../store/useStore'
 import './SceneSelector.css'
@@ -9,11 +8,10 @@ export default function SceneSelector() {
   const switchScene = useStore((state) => state.switchScene)
   const setShowSceneSelector = useStore((state) => state.setShowSceneSelector)
   const sceneMeta = useStore((state) => state.sceneMeta)
-
-  const scenes = useMemo(() => Object.values(sceneMeta || {}), [sceneMeta])
-
+  const availableScenes = useStore((state) => state.availableScenes)
+  
   if (!showSceneSelector) return null
-
+  
   const handleSceneClick = (theme: SceneThemeType) => {
     if (theme !== currentTheme) {
       switchScene(theme)
@@ -21,7 +19,7 @@ export default function SceneSelector() {
       setShowSceneSelector(false)
     }
   }
-
+  
   return (
     <div className="scene-selector-overlay fade-in">
       <div className="scene-selector-panel slide-up">
@@ -34,20 +32,23 @@ export default function SceneSelector() {
             ✕
           </button>
         </div>
-
+        
         <div className="scene-cards">
-          {scenes.map((meta) => {
-            const isActive = currentTheme === meta.id
+          {availableScenes.map((theme) => {
+            const meta = sceneMeta[theme]
+            if (!meta) return null
+            const isActive = currentTheme === theme
+            
             return (
               <div
-                key={meta.id}
+                key={theme}
                 className={`scene-card ${isActive ? 'active' : ''}`}
-                onClick={() => handleSceneClick(meta.id)}
+                onClick={() => handleSceneClick(theme)}
               >
                 <div className="scene-icon">{meta.icon || '🎭'}</div>
                 <h3 className="scene-name">{meta.name}</h3>
                 <p className="scene-description">{meta.description}</p>
-
+                
                 {meta.items && meta.items.length > 0 && (
                   <div className="scene-items">
                     <h4>包含场景：</h4>
@@ -58,11 +59,11 @@ export default function SceneSelector() {
                     </ul>
                   </div>
                 )}
-
+                
                 {isActive && (
                   <div className="active-badge">当前场景</div>
                 )}
-
+                
                 <button className="scene-enter-btn">
                   {isActive ? '继续探索' : '进入场景'}
                 </button>
@@ -70,7 +71,7 @@ export default function SceneSelector() {
             )
           })}
         </div>
-
+        
         <p className="scene-selector-hint">
           💡 提示：切换场景会重置当前进度
         </p>

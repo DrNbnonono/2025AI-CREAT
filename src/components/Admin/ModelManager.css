@@ -12,11 +12,12 @@
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(20px);
   z-index: 950;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  gap: 16px;
   resize: vertical;
-  min-height: 280px;
+  min-height: 300px;
+  overflow: hidden;
 }
 
 .model-manager::after {
@@ -39,9 +40,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .manager-header h3 {
@@ -55,12 +53,19 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
+.model-manager-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .model-list {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  margin-bottom: 16px;
   padding-right: 4px;
-  min-height: 120px;
 }
 
 .model-list h4 {
@@ -162,7 +167,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 12px;
 }
 
 .manager-actions .action-btn {
