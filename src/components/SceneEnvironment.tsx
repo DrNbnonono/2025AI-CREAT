@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Box, Sphere, Cylinder, useGLTF, TransformControls, Html } from '@react-three/drei'
 import { useStore } from '../store/useStore'

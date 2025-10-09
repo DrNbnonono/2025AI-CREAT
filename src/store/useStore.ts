@@ -310,7 +310,13 @@ function initializeScenePoints(theme: SceneThemeType, overrides?: Overrides): Sc
   const deletedIds = new Set(source.deleted[theme] || [])
   const customPoints = (source.custom[theme] || []).map((point) => normalizePoint(point))
   const filtered = base.filter((p) => !deletedIds.has(p.id))
-  const merged: ScenePointData[] = [...filtered, ...customPoints]
+  
+  // 使用 Map 去重，保证每个 ID 唯一（自定义点位优先）
+  const pointMap = new Map<string, ScenePointData>()
+  filtered.forEach((p) => pointMap.set(p.id, p))
+  customPoints.forEach((p) => pointMap.set(p.id, p))
+  
+  const merged = Array.from(pointMap.values())
   return merged.map((point) => ({ ...point, visited: false }))
 }
 
