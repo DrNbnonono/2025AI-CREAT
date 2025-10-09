@@ -18,6 +18,7 @@ export default function ModelManager() {
   const importConfiguration = useStore((state) => state.importConfiguration)
   const createNewScene = useStore((state) => state.createNewScene)
   const setCurrentTheme = useStore((state) => state.switchScene)
+  const setSelectedPoint = useStore((state) => state.setSelectedPoint)
   const currentSceneName = sceneMeta[currentTheme]?.name || currentTheme
   
   const panelRef = useRef<HTMLDivElement | null>(null)
@@ -249,6 +250,7 @@ const handleResizeEnd = useCallback(() => {
           id="scene-import-input"
           type="file"
           accept="application/json"
+          aria-label="导入场景配置文件"
           style={{ display: 'none' }}
           ref={importInputRef}
           onChange={(event) => {
@@ -262,6 +264,7 @@ const handleResizeEnd = useCallback(() => {
         <input
           type="file"
           accept=".glb,.gltf"
+          aria-label="上传3D模型文件"
           style={{ display: 'none' }}
           ref={uploadInputRef}
           onChange={(event) => {
@@ -289,7 +292,7 @@ const handleResizeEnd = useCallback(() => {
                 )}
               </div>
               <div className="model-actions">
-                <button className="btn-edit">编辑</button>
+                <button className="btn-edit" onClick={() => setSelectedPoint(point.id)}>编辑</button>
                 <button className="btn-delete" onClick={() => deleteScenePoint(point.id)}>删除</button>
               </div>
             </div>

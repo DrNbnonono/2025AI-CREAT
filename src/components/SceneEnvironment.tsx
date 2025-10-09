@@ -1,10 +1,48 @@
-import { useRef, useState, useEffect, useMemo } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useRef, useMemo } from 'react'
+import { useFrame } from '@react-three/fiber'
 import { Box, Sphere, Cylinder, useGLTF, TransformControls, Html } from '@react-three/drei'
 import { useStore } from '../store/useStore'
 import { useAdminStore } from '../store/useAdminStore'
 import { useTransformMode } from './Admin/EditorToolbar'
 import * as THREE from 'three'
+
+// 创建程序化石砖纹理
+function createBrickTexture() {
+  const canvas = document.createElement('canvas')
+  canvas.width = 512
+  canvas.height = 512
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return new THREE.Texture()
+
+  // 底色
+  ctx.fillStyle = '#6B5D52'
+  ctx.fillRect(0, 0, 512, 512)
+
+  // 绘制石砖
+  const brickWidth = 128
+  const brickHeight = 64
+  const mortarSize = 4
+
+  ctx.strokeStyle = '#4A4035'
+  ctx.lineWidth = mortarSize
+
+  for (let y = 0; y < 512; y += brickHeight) {
+    for (let x = 0; x < 512; x += brickWidth) {
+      const offsetX = (y / brickHeight) % 2 === 0 ? 0 : brickWidth / 2
+      ctx.strokeRect(x + offsetX, y, brickWidth, brickHeight)
+      
+      // 添加纹理细节
+      ctx.fillStyle = `rgba(${100 + Math.random() * 30}, ${80 + Math.random() * 20}, ${70 + Math.random() * 20}, 0.3)`
+      ctx.fillRect(x + offsetX + mortarSize, y + mortarSize, brickWidth - mortarSize * 2, brickHeight - mortarSize * 2)
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.wrapS = THREE.RepeatWrapping
+  texture.wrapT = THREE.RepeatWrapping
+  texture.repeat.set(4, 4)
+  return texture
+}
 
 export default function SceneEnvironment() {
   const scenePoints = useStore((state) => state.scenePoints)
@@ -55,7 +93,7 @@ function ArtifactDisplay({ point }: { point: any }) {
   const isSelected = selectedPointId === point.id
   
   // 旋转动画（编辑模式下禁用）
-  useFrame((state, delta) => {
+  useFrame((_state, delta) => {
     if (!isEditMode && meshRef.current) {
       meshRef.current.rotation.y += delta * 0.3
     }
@@ -95,6 +133,10 @@ function ArtifactDisplay({ point }: { point: any }) {
       : point.scale
     : 1
 
+  // 计算平台尺寸（根据模型scale调整）
+  const scaleValue = typeof groupScale === 'number' ? groupScale : Math.max(...groupScale)
+  const platformSize = Math.max(2, scaleValue * 2.5) // 动态调整平台大小
+
   if (point.modelPath) {
     return (
       <>
@@ -128,12 +170,32 @@ function ArtifactDisplay({ point }: { point: any }) {
           </Html>
         </group>
         
+        {/* 石砖底座 - 根据模型大小调整 */}
+        <mesh
+          position={[groupPosition[0], groupPosition[1] - 0.15, groupPosition[2]]}
+          receiveShadow
+        >
+          <boxGeometry args={[platformSize, 0.3, platformSize]} />
+          <meshStandardMaterial
+            color={isActive || isSelected ? '#8B7355' : '#6B5D52'}
+            roughness={0.9}
+            metalness={0.1}
+            emissive={isActive || isSelected ? '#8B7355' : '#000000'}
+            emissiveIntensity={isActive || isSelected ? 0.15 : 0}
+            polygonOffset
+            polygonOffsetFactor={1}
+            polygonOffsetUnits={1}
+          >
+            <primitive attach="map" object={createBrickTexture()} />
+          </meshStandardMaterial>
+        </mesh>
+        
         {isEditMode && isSelected && groupRef.current && (
           <TransformControls
             object={groupRef.current ?? undefined}
             mode={transformMode}
-            onMouseDown={(ev) => {
-              ev.stopPropagation()
+            onMouseDown={(e) => {
+              if (e) e.stopPropagation()
             }}
             onMouseUp={() => {
               handleTransformChange()
@@ -247,20 +309,26 @@ function ArtifactDisplay({ point }: { point: any }) {
         {/* 文物模型 */}
         {getArtifactGeometry()}
         
-        {/* 底座 */}
-        <Cylinder
-          args={[1.5, 1.5, 0.3, 32]}
+        {/* 石砖底座 - 根据模型大小调整 */}
+        <mesh
           position={[0, -1.35, 0]}
+          receiveShadow
           castShadow
         >
+          <boxGeometry args={[platformSize, 0.3, platformSize]} />
           <meshStandardMaterial
-            color={isActive || isSelected ? '#FFD700' : '#4a5568'}
-            roughness={0.5}
-            metalness={0.5}
-            emissive={isActive || isSelected ? '#FFD700' : '#000000'}
-            emissiveIntensity={isActive || isSelected ? 0.2 : 0}
-          />
-        </Cylinder>
+            color={isActive || isSelected ? '#8B7355' : '#6B5D52'}
+            roughness={0.9}
+            metalness={0.1}
+            emissive={isActive || isSelected ? '#8B7355' : '#000000'}
+            emissiveIntensity={isActive || isSelected ? 0.15 : 0}
+            polygonOffset
+            polygonOffsetFactor={1}
+            polygonOffsetUnits={1}
+          >
+            <primitive attach="map" object={createBrickTexture()} />
+          </meshStandardMaterial>
+        </mesh>
         
         {/* 标签 */}
         <Html
@@ -297,8 +365,8 @@ function ArtifactDisplay({ point }: { point: any }) {
         <TransformControls
           object={groupRef.current ?? undefined}
           mode={transformMode}
-          onMouseDown={(ev) => {
-            ev.stopPropagation()
+          onMouseDown={(e) => {
+            if (e) e.stopPropagation()
           }}
           onMouseUp={() => {
             handleTransformChange()
@@ -310,7 +378,7 @@ function ArtifactDisplay({ point }: { point: any }) {
 }
 
 // 加载 GLTF/GLB 模型（性能优化版本）
-function ModelObject({ url, highlight, name }: { url: string; highlight: boolean; name: string }) {
+function ModelObject({ url, highlight }: { url: string; highlight: boolean; name: string }) {
   const { scene } = useGLTF(url) as any
   const meshRef = useRef<THREE.Group>()
   
