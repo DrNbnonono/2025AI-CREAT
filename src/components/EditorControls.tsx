@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { Vector3 } from 'three'
+import { useAdminStore } from '../store/useAdminStore'
 
 /**
  * 编辑器模式控制器（类似Blender）
@@ -13,6 +14,7 @@ import { Vector3 } from 'three'
 export default function EditorControls() {
   const { camera, gl } = useThree()
   const controlsRef = useRef<OrbitControls | null>(null)
+  const isUiInteracting = useAdminStore((state) => state.isUiInteracting)
   
   const moveState = useRef({
     forward: false,
@@ -51,6 +53,7 @@ export default function EditorControls() {
   
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isUiInteracting) return
       switch (e.code) {
         case 'KeyW': moveState.current.forward = true; break
         case 'KeyS': moveState.current.backward = true; break
@@ -62,6 +65,7 @@ export default function EditorControls() {
     }
     
     const handleKeyUp = (e: KeyboardEvent) => {
+      if (isUiInteracting) return
       switch (e.code) {
         case 'KeyW': moveState.current.forward = false; break
         case 'KeyS': moveState.current.backward = false; break
@@ -79,7 +83,7 @@ export default function EditorControls() {
       document.removeEventListener('keydown', handleKeyDown)
       document.removeEventListener('keyup', handleKeyUp)
     }
-  }, [])
+  }, [isUiInteracting])
   
   useFrame((state, delta) => {
     if (!controlsRef.current) return

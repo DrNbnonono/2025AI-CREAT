@@ -305,7 +305,8 @@ function saveOverrides(data: Overrides) {
 
 function initializeScenePoints(theme: SceneThemeType, overrides?: Overrides): ScenePoint[] {
   const source = overrides ?? loadOverrides()
-  const base = (sceneDataMap[theme] || []).map((point) => normalizePoint(point))
+  const baseSource = sceneDataMap[theme] || []
+  const base = baseSource.map((point) => normalizePoint(point))
   const deletedIds = new Set(source.deleted[theme] || [])
   const customPoints = (source.custom[theme] || []).map((point) => normalizePoint(point))
   const filtered = base.filter((p) => !deletedIds.has(p.id))
@@ -313,41 +314,42 @@ function initializeScenePoints(theme: SceneThemeType, overrides?: Overrides): Sc
   return merged.map((point) => ({ ...point, visited: false }))
 }
 
-const initialOverrides = loadOverrides()
-
 function computeAvailableScenes(meta: Record<SceneThemeType, SceneMeta>, custom: Record<SceneThemeType, ScenePointData[]>): SceneThemeType[] {
   return collectAvailableScenes(meta, custom)
 }
 
-export const useStore = create<GameState>((set, get) => ({
-  // 初始状态
-  playerPosition: new Vector3(0, 1.6, 10),
-  isPointerLocked: false,
-  
-  // 场景管理
-  currentTheme: 'museum',
-  scenePoints: initializeScenePoints('museum', initialOverrides),
-  showSceneSelector: false,
-  isTransitioning: false,
-  availableScenes: computeAvailableScenes(initialOverrides.meta, initialOverrides.custom),
-  sceneMeta: initialOverrides.meta,
-  // Admin selection / placement
-  selectedPointId: null,
-  placingModelPath: null,
-  
-  currentPoint: null,
-  messages: [],
-  isAILoading: false,
-  showChat: false,
-  showInstructions: true,
-  showSceneInfo: false,
-  
-  // Actions 实现
-  setPlayerPosition: (position) => set({ playerPosition: position }),
-  
-  setPointerLocked: (locked) => set({ isPointerLocked: locked }),
-  
-  setCurrentPoint: (point) => {
+export const useStore = create<GameState>((set, get) => {
+  const overrides = loadOverrides()
+
+  return {
+    // 初始状态
+    playerPosition: new Vector3(0, 1.6, 10),
+    isPointerLocked: false,
+    
+    // 场景管理
+    currentTheme: 'museum',
+    scenePoints: initializeScenePoints('museum', overrides),
+    showSceneSelector: false,
+    isTransitioning: false,
+    availableScenes: computeAvailableScenes(overrides.meta, overrides.custom),
+    sceneMeta: overrides.meta,
+    // Admin selection / placement
+    selectedPointId: null,
+    placingModelPath: null,
+    
+    currentPoint: null,
+    messages: [],
+    isAILoading: false,
+    showChat: false,
+    showInstructions: true,
+    showSceneInfo: false,
+    
+    // Actions 实现
+    setPlayerPosition: (position) => set({ playerPosition: position }),
+    
+    setPointerLocked: (locked) => set({ isPointerLocked: locked }),
+    
+    setCurrentPoint: (point) => {
     const { currentPoint, addMessage } = get()
     
     // 如果进入新的场景点
@@ -577,4 +579,5 @@ export const useStore = create<GameState>((set, get) => ({
       availableScenes: computeAvailableScenes(overrides.meta, overrides.custom),
     })
   },
-}))
+  }
+})

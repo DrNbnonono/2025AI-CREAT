@@ -12,12 +12,14 @@ interface AdminState {
   
   // 编辑模式
   isEditMode: boolean
+  isUiInteracting: boolean
   
   // Actions
   login: (password: string) => boolean
   logout: () => void
   toggleEditMode: () => void
   setUserRole: (role: UserRole) => void
+  setIsUiInteracting: (value: boolean) => void
 }
 
 // 简单的密码验证（实际项目中应该用更安全的方式）
@@ -30,6 +32,7 @@ export const useAdminStore = create<AdminState>()(
       userRole: 'guest',
       isAuthenticated: false,
       isEditMode: false,
+      isUiInteracting: false,
       
       // 登录
       login: (password: string) => {
@@ -48,7 +51,8 @@ export const useAdminStore = create<AdminState>()(
         set({ 
           userRole: 'guest', 
           isAuthenticated: false,
-          isEditMode: false 
+          isEditMode: false,
+          isUiInteracting: false,
         })
       },
       
@@ -56,7 +60,7 @@ export const useAdminStore = create<AdminState>()(
       toggleEditMode: () => {
         const { userRole, isEditMode } = get()
         if (userRole === 'admin') {
-          set({ isEditMode: !isEditMode })
+          set({ isEditMode: !isEditMode, isUiInteracting: false })
         }
       },
       
@@ -67,6 +71,8 @@ export const useAdminStore = create<AdminState>()(
           isAuthenticated: role === 'admin'
         })
       },
+
+      setIsUiInteracting: (value) => set({ isUiInteracting: value }),
     }),
     {
       name: 'admin-storage', // localStorage 中的 key

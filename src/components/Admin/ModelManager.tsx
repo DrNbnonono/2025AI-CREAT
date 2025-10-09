@@ -7,6 +7,7 @@ import './ModelManager.css'
 
 export default function ModelManager() {
   const isEditMode = useAdminStore((state) => state.isEditMode)
+  const setIsUiInteracting = useAdminStore((state) => state.setIsUiInteracting)
   const currentTheme = useStore((state) => state.currentTheme)
   const scenePoints = useStore((state) => state.scenePoints)
   const sceneMeta = useStore((state) => state.sceneMeta)
@@ -65,14 +66,15 @@ export default function ModelManager() {
 
   const handleResizeMove = useCallback((event: MouseEvent) => {
     if (!resizeState.current) return
+    event.preventDefault()
     const { startY, startHeight } = resizeState.current
     const delta = startY - event.clientY
-    const maxHeight = Math.max(260, window.innerHeight - 200)
+    const maxHeight = Math.max(260, window.innerHeight - 220)
     const nextHeight = Math.min(Math.max(startHeight + delta, 260), maxHeight)
     setPanelHeight(nextHeight)
   }, [])
 
-  const handleResizeEnd = useCallback(() => {
+const handleResizeEnd = useCallback(() => {
     if (!resizeState.current) return
     resizeState.current = null
     document.removeEventListener('mousemove', handleResizeMove)
@@ -80,19 +82,23 @@ export default function ModelManager() {
     document.body.style.cursor = ''
     document.body.style.userSelect = ''
     localStorage.setItem('model-manager-height', String(panelRef.current?.offsetHeight ?? panelHeight))
-  }, [handleResizeMove, panelHeight])
+    setTimeout(() => setIsUiInteracting(false), 0)
+  }, [handleResizeMove, panelHeight, setIsUiInteracting])
 
   const handleResizeStart = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
+    event.stopPropagation()
+    event.preventDefault()
     if (!panelRef.current) return
     resizeState.current = {
       startY: event.clientY,
       startHeight: panelRef.current.offsetHeight,
     }
+    setIsUiInteracting(true)
     document.addEventListener('mousemove', handleResizeMove)
     document.addEventListener('mouseup', handleResizeEnd)
     document.body.style.cursor = 'ns-resize'
     document.body.style.userSelect = 'none'
-  }, [handleResizeMove, handleResizeEnd])
+  }, [handleResizeMove, handleResizeEnd, setIsUiInteracting])
 
   useEffect(() => {
     return () => {
