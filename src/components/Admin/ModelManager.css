@@ -3,8 +3,6 @@
   left: 32px;
   bottom: 32px;
   width: 420px;
-  height: 380px;
-  max-height: calc(100vh - 200px);
   background: rgba(26, 32, 44, 0.95);
   border-radius: 16px;
   padding: 20px;
@@ -15,26 +13,14 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  resize: vertical;
-  min-height: 300px;
   overflow: hidden;
 }
 
 .model-manager::after {
-  content: '';
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  width: 16px;
-  height: 16px;
-  border-right: 2px solid rgba(255, 255, 255, 0.25);
-  border-bottom: 2px solid rgba(255, 255, 255, 0.25);
-  pointer-events: none;
+  content: none;
 }
 
-.model-manager:hover {
-  overflow: hidden;
-}
+
 
 .manager-header {
   display: flex;
@@ -59,6 +45,38 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.model-manager-resizer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 20px;
+  cursor: ns-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.resizer-grip {
+  width: 60px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  transition: background 0.2s ease;
+}
+
+.model-manager-resizer:hover .resizer-grip {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.model-manager {
+  padding-top: 32px;
+}
+
+.manager-header {
+  padding-top: 6px;
 }
 
 .model-list {

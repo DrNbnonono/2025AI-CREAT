@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { MouseEvent as ReactMouseEvent } from 'react'
 import { Vector3 } from 'three'
 import { useStore, type SceneThemeType } from '../../store/useStore'
 import { useAdminStore } from '../../store/useAdminStore'
@@ -8,15 +9,28 @@ export default function ModelManager() {
   const isEditMode = useAdminStore((state) => state.isEditMode)
   const currentTheme = useStore((state) => state.currentTheme)
   const scenePoints = useStore((state) => state.scenePoints)
+  const sceneMeta = useStore((state) => state.sceneMeta)
+  const availableScenes = useStore((state) => state.availableScenes)
   const addScenePoint = useStore((state) => state.addScenePoint)
   const deleteScenePoint = useStore((state) => state.deleteScenePoint)
   const exportConfiguration = useStore((state) => state.exportConfiguration)
   const importConfiguration = useStore((state) => state.importConfiguration)
   const createNewScene = useStore((state) => state.createNewScene)
   const setCurrentTheme = useStore((state) => state.switchScene)
+  const currentSceneName = sceneMeta[currentTheme]?.name || currentTheme
   
+  const panelRef = useRef<HTMLDivElement | null>(null)
+  const resizeState = useRef<{ startY: number; startHeight: number } | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [showSceneForm, setShowSceneForm] = useState(false)
+  const [panelHeight, setPanelHeight] = useState(() => {
+    if (typeof window === 'undefined') return 380
+    const stored = Number.parseInt(localStorage.getItem('model-manager-height') || '', 10)
+    if (Number.isFinite(stored) && stored >= 260) {
+      return stored
+    }
+    return 380
+  })
   const [formData, setFormData] = useState({
     id: '',
     name: '',
@@ -27,10 +41,11 @@ export default function ModelManager() {
     modelPath: '/models/neighbourhood/source/Untitled.glb',
   })
   const [sceneForm, setSceneForm] = useState({
-    theme: 'museum' as SceneThemeType,
+    themeId: '' as SceneThemeType,
     name: '',
     description: '',
     prompt: '',
+    icon: '',
   })
   const [modelOptions, setModelOptions] = useState<string[]>([])
   const importInputRef = useRef<HTMLInputElement | null>(null)
@@ -41,6 +56,50 @@ export default function ModelManager() {
       .then((data) => setModelOptions(data.files || []))
       .catch(() => setModelOptions([]))
   }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const maxHeight = Math.max(260, window.innerHeight - 200)
+    setPanelHeight((height) => Math.min(Math.max(height, 260), maxHeight))
+  }, [])
+
+  const handleResizeMove = useCallback((event: MouseEvent) => {
+    if (!resizeState.current) return
+    const { startY, startHeight } = resizeState.current
+    const delta = startY - event.clientY
+    const maxHeight = Math.max(260, window.innerHeight - 200)
+    const nextHeight = Math.min(Math.max(startHeight + delta, 260), maxHeight)
+    setPanelHeight(nextHeight)
+  }, [])
+
+  const handleResizeEnd = useCallback(() => {
+    if (!resizeState.current) return
+    resizeState.current = null
+    document.removeEventListener('mousemove', handleResizeMove)
+    document.removeEventListener('mouseup', handleResizeEnd)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    localStorage.setItem('model-manager-height', String(panelRef.current?.offsetHeight ?? panelHeight))
+  }, [handleResizeMove, panelHeight])
+
+  const handleResizeStart = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!panelRef.current) return
+    resizeState.current = {
+      startY: event.clientY,
+      startHeight: panelRef.current.offsetHeight,
+    }
+    document.addEventListener('mousemove', handleResizeMove)
+    document.addEventListener('mouseup', handleResizeEnd)
+    document.body.style.cursor = 'ns-resize'
+    document.body.style.userSelect = 'none'
+  }, [handleResizeMove, handleResizeEnd])
+
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleResizeMove)
+      document.removeEventListener('mouseup', handleResizeEnd)
+    }
+  }, [handleResizeEnd, handleResizeMove])
   
   if (!isEditMode) return null
   
@@ -89,25 +148,44 @@ export default function ModelManager() {
   }
 
   const handleCreateScene = () => {
-    if (!sceneForm.prompt || !sceneForm.name) {
-      alert('请填写场景名称和默认提示词')
+    const themeId = sceneForm.themeId.trim()
+    const name = sceneForm.name.trim()
+    const description = sceneForm.description.trim()
+    const prompt = sceneForm.prompt.trim()
+    const icon = sceneForm.icon.trim()
+
+    if (!themeId || !name || !prompt) {
+      alert('请填写场景标识、名称和默认提示词')
       return
     }
-    createNewScene(sceneForm.theme, {
-      name: sceneForm.name,
-      description: sceneForm.description,
-      defaultPrompt: sceneForm.prompt,
+
+    if (availableScenes.includes(themeId)) {
+      alert('该场景标识已存在，请使用新的标识')
+      return
+    }
+    createNewScene(themeId, {
+      name,
+      description,
+      defaultPrompt: prompt,
+      icon,
     })
-    setCurrentTheme(sceneForm.theme)
+    setCurrentTheme(themeId)
     setShowSceneForm(false)
-    setSceneForm({ theme: 'museum', name: '', description: '', prompt: '' })
+    setSceneForm({ themeId: '' as SceneThemeType, name: '', description: '', prompt: '', icon: '' })
   }
   
   return (
-    <div className="model-manager">
+    <div
+      className="model-manager"
+      ref={panelRef}
+      style={{ height: panelHeight, maxHeight: 'calc(100vh - 200px)' }}
+    >
+      <div className="model-manager-resizer" onMouseDown={handleResizeStart}>
+        <div className="resizer-grip" />
+      </div>
       <div className="manager-header">
         <h3>📦 模型管理</h3>
-        <span className="current-scene">当前场景: {getSceneName(currentTheme)}</span>
+        <span className="current-scene">当前场景: {currentSceneName}</span>
       </div>
 
       <div className="manager-actions">
@@ -257,15 +335,12 @@ export default function ModelManager() {
           <div className="add-form" onClick={(e) => e.stopPropagation()}>
             <h3>创建新场景</h3>
             <div className="form-field">
-              <label>主题标识</label>
-              <select
-                value={sceneForm.theme}
-                onChange={(e) => setSceneForm({ ...sceneForm, theme: e.target.value as SceneThemeType })}
-              >
-                <option value="museum">museum</option>
-                <option value="redMansion">redMansion</option>
-                <option value="silkRoad">silkRoad</option>
-              </select>
+              <label>场景标识（英文/拼音）</label>
+              <input
+                value={sceneForm.themeId}
+                onChange={(e) => setSceneForm({ ...sceneForm, themeId: e.target.value as SceneThemeType })}
+                placeholder="例如：qingming"
+              />
             </div>
             <div className="form-field">
               <label>场景名称</label>
@@ -292,6 +367,14 @@ export default function ModelManager() {
                 placeholder="请填写默认的场景介绍或导览词，用户进入场景时将作为系统提示词。"
               />
             </div>
+            <div className="form-field">
+              <label>场景图标（可选 emoji）</label>
+              <input
+                value={sceneForm.icon}
+                onChange={(e) => setSceneForm({ ...sceneForm, icon: e.target.value })}
+                placeholder="例如：🎨"
+              />
+            </div>
             <div className="form-buttons">
               <button className="btn-save" onClick={handleCreateScene}>创建场景</button>
               <button className="btn-cancel" onClick={() => setShowSceneForm(false)}>取消</button>
@@ -301,13 +384,4 @@ export default function ModelManager() {
       )}
     </div>
   )
-}
-
-function getSceneName(theme: SceneThemeType): string {
-  const names = {
-    museum: '博物馆',
-    redMansion: '红楼梦',
-    silkRoad: '丝绸之路',
-  }
-  return names[theme]
 }
