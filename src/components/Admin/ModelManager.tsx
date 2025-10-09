@@ -49,13 +49,19 @@ export default function ModelManager() {
     icon: '',
   })
   const [modelOptions, setModelOptions] = useState<string[]>([])
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null)
   const importInputRef = useRef<HTMLInputElement | null>(null)
+  const uploadInputRef = useRef<HTMLInputElement | null>(null)
 
-  useEffect(() => {
-    fetch('/models/index.json')
+  const refreshModelList = useCallback(() => {
+    fetch('/models/index.json?' + Date.now())
       .then((r) => r.json())
       .then((data) => setModelOptions(data.files || []))
       .catch(() => setModelOptions([]))
+  }, [])
+
+  useEffect(() => {
+    refreshModelList()
   }, [])
 
 
@@ -180,16 +186,52 @@ const handleResizeEnd = useCallback(() => {
     setShowSceneForm(false)
     setSceneForm({ themeId: '' as SceneThemeType, name: '', description: '', prompt: '', icon: '' })
   }
+
+  const handleFileUpload = async (file: File) => {
+    if (!file.name.match(/\.(glb|gltf)$/i)) {
+      alert('请上传 .glb 或 .gltf 格式的3D模型文件')
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('model', file)
+
+    try {
+      setUploadProgress('正在上传...')
+      
+      // 使用简单的本地上传API
+      const response = await fetch('/api/upload-model', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error('上传失败')
+      }
+
+      const result = await response.json()
+      setUploadProgress('上传成功！刷新模型列表...')
+      
+      // 等待文件系统同步
+      setTimeout(() => {
+        refreshModelList()
+        setUploadProgress(null)
+        alert(`模型已上传到: ${result.path}`)
+      }, 1000)
+    } catch (error) {
+      console.error('上传失败:', error)
+      setUploadProgress(null)
+      alert('上传失败，请确保后端上传API已配置')
+    }
+  }
   
   return (
     <div
       className="model-manager"
       ref={panelRef}
-      style={{ height: panelHeight, maxHeight: 'calc(100vh - 200px)' }}
+      style={{ height: panelHeight }}
     >
-      <div className="model-manager-resizer" onMouseDown={handleResizeStart}>
-        <div className="resizer-grip" />
-      </div>
+      <div className="resize-handle-top" onMouseDown={handleResizeStart} />
       <div className="manager-header">
         <h3>📦 模型管理</h3>
         <span className="current-scene">当前场景: {currentSceneName}</span>
@@ -197,6 +239,9 @@ const handleResizeEnd = useCallback(() => {
 
       <div className="manager-actions">
         <button className="action-btn" onClick={() => setShowAddForm(true)}>➕ 添加点位</button>
+        <button className="action-btn" onClick={() => uploadInputRef.current?.click()} disabled={!!uploadProgress}>
+          📁 {uploadProgress || '上传模型'}
+        </button>
         <button className="action-btn" onClick={handleExport}>📤 导出配置</button>
         <button className="action-btn" onClick={() => document.getElementById('scene-import-input')?.click()}>📥 导入配置</button>
         <button className="action-btn" onClick={() => setShowSceneForm(true)}>🆕 新建场景</button>
@@ -210,6 +255,19 @@ const handleResizeEnd = useCallback(() => {
             const file = event.target.files?.[0]
             if (file) {
               handleImport(file)
+              event.target.value = ''
+            }
+          }}
+        />
+        <input
+          type="file"
+          accept=".glb,.gltf"
+          style={{ display: 'none' }}
+          ref={uploadInputRef}
+          onChange={(event) => {
+            const file = event.target.files?.[0]
+            if (file) {
+              handleFileUpload(file)
               event.target.value = ''
             }
           }}

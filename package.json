@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "predev": "node scripts/scan-models.cjs",
-    "dev": "vite",
-    "dev:watch": "concurrently \"node scripts/watch-models.cjs\" \"vite\"",
+    "dev": "concurrently \"node scripts/watch-models.cjs\" \"vite --config vite.config.upload.ts\"",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",

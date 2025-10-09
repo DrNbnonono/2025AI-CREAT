@@ -3,9 +3,12 @@
   left: 32px;
   bottom: 32px;
   width: 420px;
+  min-height: 300px;
+  max-height: calc(100vh - 120px);
   background: rgba(26, 32, 44, 0.95);
   border-radius: 16px;
   padding: 20px;
+  padding-top: 32px; /* 为顶部resize handle留空间 */
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(20px);
@@ -21,16 +24,26 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 12px;
+  height: 20px;
   cursor: ns-resize;
-  background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 16px 16px 0 0;
-  opacity: 0;
-  transition: opacity 0.2s;
+  z-index: 10;
 }
 
-.model-manager:hover .resize-handle-top {
-  opacity: 1;
+.resize-handle-top::after {
+  content: '';
+  width: 60px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  transition: background 0.2s ease;
+}
+
+.resize-handle-top:hover::after {
+  background: rgba(255, 255, 255, 0.4);
 }
 
 
@@ -60,33 +73,6 @@
   overflow: hidden;
 }
 
-.model-manager-resizer {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 22px;
-  cursor: ns-resize;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.resizer-grip {
-  width: 60px;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
-  transition: background 0.2s ease;
-}
-
-.model-manager-resizer:hover .resizer-grip {
-  background: rgba(255, 255, 255, 0.35);
-}
-
-.model-manager {
-  padding-bottom: 28px;
-}
 
 .model-list {
   flex: 1;
