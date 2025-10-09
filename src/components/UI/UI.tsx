@@ -32,7 +32,7 @@ export default function UI() {
   }
   
   return (
-    <div className="ui-container no-select">
+    <div className={`ui-container no-select ${isEditMode ? 'editor-layout' : ''}`}>
       {/* 操作说明 */}
       {showInstructions && <Instructions />}
       

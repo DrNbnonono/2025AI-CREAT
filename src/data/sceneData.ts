@@ -10,6 +10,8 @@ export interface ScenePointData {
   aiContext: string
   modelPath?: string
   category?: string
+  rotation?: Vector3
+  scale?: number
 }
 
 // 博物馆场景

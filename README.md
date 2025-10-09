@@ -19,74 +19,81 @@
 
 ## 🚀 快速开始
 
+> 如果已经具备 Node.js 与 npm 环境，直接按照下方“全量部署教程”执行即可。
+
 ### 环境要求
 
-- Node.js 16.0 或更高版本
-- npm 或 yarn 包管理器
+- Node.js 18 LTS（推荐使用 [nvm](https://github.com/nvm-sh/nvm) 或 [fnm](https://github.com/Schniz/fnm) 管理版本）
+- npm 9+ 或 yarn 1.22+
+- Git 2.40+
 
-### 安装步骤
+### 全量部署教程
 
-1. **克隆项目**
+1. **安装 Node.js & npm**
+   - Windows: 前往 [nodejs.org](https://nodejs.org/) 下载并安装 LTS 版本；安装完成后重新打开终端。
+   - macOS/Linux: 推荐使用 nvm/fnm 安装：
+     ```bash
+     # 以 nvm 为例
+     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+     nvm install 18
+     nvm use 18
+     ```
+   - 验证版本：
+     ```bash
+     node -v   # 应输出 v18.x.x
+     npm -v    # 应输出 9.x.x 以上
+     ```
 
-```bash
-git clone <your-repo-url>
-cd 2025AI+
-```
+2. **克隆并进入项目目录**
+   ```bash
+   git clone https://github.com/DrNbnonono/2025AI-CREAT.git
+   cd 2025AI-CREAT
+   ```
 
-2. **安装依赖**
+3. **安装依赖**（首次运行必做）
+   ```bash
+   npm install
+   ```
+   > 如果使用国内镜像，可临时指定 `npm_config_registry=https://registry.npmmirror.com npm install`
 
-```bash
-npm install
-# 或
-yarn install
-```
+4. **配置环境变量（可选）**
+   - 项目附带 `.env.example`，覆盖常用 AI 服务配置；默认无需修改即可体验（内置模拟回复）。
+   - 如需真实模型：
+     ```bash
+     cp .env.example .env
+     ```
+     根据需求选择：
+       - **LM Studio / OpenRouter / DeepSeek**：填写对应 Key 与 Base URL。
+       - **Ollama 本地模型**：`VITE_AI_PROVIDER=ollama`，保持 `VITE_AI_API_KEY` 为空。
 
-3. **配置 AI API（可选）**
+5. **启动开发服务器**
+   ```bash
+   npm run dev
+   ```
+   - 启动脚本会自动执行模型扫描脚本 `scripts/scan-models.cjs`，生成/更新 `public/models/index.json`。
+   - 浏览器打开 `http://localhost:5173`（或终端输出的端口）即可访问。
+   - 若需文件监听自动刷新模型索引，可单独运行 `npm run dev:watch`。
 
-复制 `.env.example` 为 `.env` 并填入您的 AI API 配置：
+6. **模型与资源**
+   - 仓库已包含演示模型索引，无需上传任何额外文件即可体验。
+   - 如需新增模型，将 `.glb/.gltf` 拖入 `public/models/`，开发模式下会自动识别。
+   - 控制台脚本：
+     ```bash
+     npm run models:scan   # 手动重新扫描
+     ```
 
-```bash
-cp .env.example .env
-```
+7. **生产构建与预览**
+   ```bash
+   npm run build       # 生成 dist/
+   npm run preview     # 本地预览生产构建
+   ```
 
-编辑 `.env` 文件：
+8. **常见问题排查**
+   - 启动报错 `ENOENT: no such file or directory, open '.env'`：复制 `.env.example`。
+   - 浏览器空白：检查终端是否有编译错误；确认端口未被占用。
+   - AI 调用失败：核对 `.env` 配置或 fallback 到内置模拟回复。
 
-```env
-VITE_AI_API_KEY=your_api_key_here
-VITE_AI_BASE_URL=https://api.openai.com/v1
-VITE_AI_MODEL=gpt-3.5-turbo
-VITE_AI_PROVIDER=openai
-```
-
-**注意**：如果不配置 API Key，系统会使用内置的智能模拟回复进行演示。
-
-4. **启动开发服务器**
-
-```bash
-npm run dev
-# 或
-yarn dev
-```
-
-5. **访问应用**
-
-打开浏览器访问 `http://localhost:3000`
-
-### 生产构建
-
-```bash
-npm run build
-# 或
-yarn build
-```
-
-构建完成后，可以使用以下命令预览：
-
-```bash
-npm run preview
-# 或
-yarn preview
-```
+> ✅ 完成以上步骤后，下载源码即可开箱即用，无需额外上传或配置模型资源。
 
 ## 🎮 使用指南
 
@@ -131,51 +138,58 @@ yarn preview
 2025AI+/
 ├── public/                      # 静态资源目录
 │   ├── models/                  # 3D 模型文件（GLB/GLTF）
+│   │   ├── index.json           # 模型索引（脚本自动生成）
 │   │   └── .gitkeep
 │   └── vite.svg                 # 网站图标
 │
 ├── src/                         # 源代码目录
 │   ├── components/              # React 组件
-│   │   ├── UI/                  # UI 层组件
-│   │   │   ├── UI.tsx              # UI 主容器
-│   │   │   ├── UI.css
-│   │   │   ├── ChatPanel.tsx       # AI 对话面板
-│   │   │   ├── ChatPanel.css
-│   │   │   ├── Instructions.tsx    # 操作说明
-│   │   │   ├── Instructions.css
-│   │   │   ├── SceneInfo.tsx       # 场景信息面板
-│   │   │   ├── SceneInfo.css
-│   │   │   ├── Controls.tsx        # 控制按钮
-│   │   │   ├── Controls.css
-│   │   │   ├── LoadingScreen.tsx   # 加载屏幕
-│   │   │   └── LoadingScreen.css
+│   │   ├── UI/                  # UI 层组件（对话、场景信息等）
+│   │   │   ├── UI.tsx / UI.css
+│   │   │   ├── Controls.tsx / Controls.css
+│   │   │   ├── ChatPanel.tsx / ChatPanel.css
+│   │   │   ├── SceneInfo.tsx / SceneInfo.css
+│   │   │   ├── Instructions.tsx / Instructions.css
+│   │   │   └── LoadingScreen.tsx / LoadingScreen.css
 │   │   │
 │   │   ├── Scene.tsx               # Three.js 主场景容器
-│   │   ├── Experience.tsx          # 核心体验逻辑（更新、触发检测）
-│   │   ├── FirstPersonControls.tsx # 第一人称控制器（移动、跳跃）
-│   │   ├── SceneEnvironment.tsx    # 场景环境（地面、文物、装饰）
-│   │   └── TriggerZones.tsx        # 触发区域可视化（开发用）
+│   │   ├── Experience.tsx          # 核心体验逻辑（触发检测、控制切换）
+│   │   ├── FirstPersonControls.tsx # 游客模式第一人称控制器
+│   │   ├── EditorControls.tsx      # 管理员 Orbit 控制器
+│   │   ├── ModelPlacementHelper.tsx# 鼠标射线预览与放置
+│   │   ├── SceneEnvironment.tsx    # 场景环境与模型渲染
+│   │   ├── TriggerZones.tsx        # 触发区域可视化（开发用）
+│   │   └── Admin/                  # 管理员工具模块
+│   │       ├── AdminLogin.tsx / AdminLogin.css
+│   │       ├── ModelManager.tsx / ModelManager.css
+│   │       ├── ModelLibraryPanel.tsx / ModelLibraryPanel.css
+│   │       ├── PropertyPanel.tsx / PropertyPanel.css
+│   │       └── EditorToolbar.tsx / EditorToolbar.css
 │   │
-│   ├── services/                # 服务层
-│   │   └── aiService.ts         # AI API 服务（支持多种 AI 提供商）
+│   ├── data/                    # 预设数据
+│   │   └── sceneData.ts         # 默认场景点位与 AI 文案
 │   │
-│   ├── store/                   # 全局状态管理
-│   │   └── useStore.ts          # Zustand store（玩家、场景、AI 状态）
+│   ├── services/                # 业务服务层
+│   │   └── aiService.ts         # AI API 服务（多提供商、<think> 过滤）
 │   │
-│   ├── App.tsx                  # 应用根组件
-│   ├── App.css
+│   ├── store/                   # 全局状态管理（Zustand）
+│   │   ├── useStore.ts          # 玩家/场景/对话状态
+│   │   └── useAdminStore.ts     # 管理员状态
+│   │
+│   ├── App.tsx / App.css        # 应用根组件
 │   ├── main.tsx                 # 应用入口
 │   └── index.css                # 全局样式
 │
+├── scripts/                    # 辅助脚本
+│   ├── scan-models.cjs          # 启动前扫描模型目录并生成 index.json
+│   └── watch-models.cjs         # dev 模式实时监听 models 目录
+│
 ├── .env.example                 # 环境变量配置示例
 ├── .gitignore                   # Git 忽略文件
-├── DEPLOYMENT.md                # 部署指南
-├── ENV_CONFIG.md                # 环境配置详细说明
 ├── README.md                    # 项目说明文档（本文件）
 ├── index.html                   # HTML 入口
 ├── package.json                 # 项目依赖和脚本
-├── tsconfig.json                # TypeScript 配置
-├── tsconfig.node.json           # TypeScript Node 配置
+├── tsconfig.json / tsconfig.node.json
 └── vite.config.ts               # Vite 构建配置
 ```
 

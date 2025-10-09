@@ -6,6 +6,8 @@ import type { ScenePointData } from '../data/sceneData'
 // 场景点位配置
 export interface ScenePoint extends ScenePointData {
   visited: boolean
+  rotation?: Vector3
+  scale?: number
 }
 
 // 场景主题类型

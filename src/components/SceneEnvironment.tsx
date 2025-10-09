@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Text, Box, Sphere, Cylinder, useGLTF, TransformControls } from '@react-three/drei'
+import { Box, Sphere, Cylinder, useGLTF, TransformControls, Html } from '@react-three/drei'
 import { useStore } from '../store/useStore'
 import { useAdminStore } from '../store/useAdminStore'
 import { useTransformMode } from './Admin/EditorToolbar'
@@ -41,7 +41,7 @@ export default function SceneEnvironment() {
 
 // 文物展示组件
 function ArtifactDisplay({ point }: { point: any }) {
-  const groupRef = useRef<THREE.Group>(null)
+  const groupRef = useRef<THREE.Group | null>(null)
   const meshRef = useRef<THREE.Mesh>(null)
   const currentPoint = useStore((state) => state.currentPoint)
   const isActive = currentPoint?.id === point.id
@@ -53,7 +53,6 @@ function ArtifactDisplay({ point }: { point: any }) {
   const transformMode = useTransformMode()
   
   const isSelected = selectedPointId === point.id
-  const [isDragging, setIsDragging] = useState(false)
   
   // 旋转动画（编辑模式下禁用）
   useFrame((state, delta) => {
@@ -62,50 +61,81 @@ function ArtifactDisplay({ point }: { point: any }) {
     }
   })
   
-  // 点击选择（仅编辑模式）
   const handleClick = (e: any) => {
     if (!isEditMode) return
     e.stopPropagation()
     setSelectedPoint(point.id)
   }
   
-  // TransformControls 变化时更新位置
   const handleTransformChange = () => {
     if (!groupRef.current || !isEditMode || !isSelected) return
-    const pos = groupRef.current.position
+    const { position, rotation, scale } = groupRef.current
     updateScenePoint(point.id, {
-      position: new THREE.Vector3(pos.x, pos.y, pos.z),
+      position: new THREE.Vector3(position.x, position.y, position.z),
+      rotation: new THREE.Vector3(rotation.x, rotation.y, rotation.z),
+      scale: Array.isArray(scale)
+        ? (scale as any).x ?? 1
+        : scale instanceof THREE.Vector3
+          ? scale.x
+          : typeof scale === 'number'
+            ? scale
+            : 1,
     })
   }
   
-  // 如果存在模型路径，优先渲染 GLTF/GLB 模型
+  const groupPosition: [number, number, number] = [point.position.x, point.position.y ?? 0, point.position.z]
+  const groupRotation: [number, number, number] = [
+    point.rotation?.x ?? 0,
+    point.rotation?.y ?? 0,
+    point.rotation?.z ?? 0,
+  ]
+  const groupScale: number | [number, number, number] = point.scale != null
+    ? Array.isArray(point.scale)
+      ? point.scale
+      : point.scale
+    : 1
+
   if (point.modelPath) {
     return (
       <>
-        <group ref={groupRef} position={[point.position.x, point.position.y || 0, point.position.z]} onClick={handleClick}>
+        <group
+          ref={groupRef}
+          position={groupPosition}
+          rotation={groupRotation}
+          scale={groupScale}
+          onClick={handleClick}
+        >
           <ModelObject url={point.modelPath} highlight={isActive || isSelected} name={point.name} />
-          {/* 标签 */}
-          <Text
+          <Html
             position={[0, 2, 0]}
-            fontSize={0.3}
-            color={isActive || isSelected ? '#FFD700' : '#ffffff'}
-            anchorX="center"
-            anchorY="middle"
-            outlineWidth={0.02}
-            outlineColor="#000000"
+            center
+            style={{ pointerEvents: 'none' }}
           >
-            {point.name}
-          </Text>
+            <div
+              style={{
+                padding: '4px 10px',
+                borderRadius: '999px',
+                background: isActive || isSelected ? 'rgba(255,215,0,0.9)' : 'rgba(0,0,0,0.6)',
+                color: isActive || isSelected ? '#000' : '#fff',
+                fontSize: '14px',
+                fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {point.name}
+            </div>
+          </Html>
         </group>
         
-        {/* TransformControls（仅编辑模式且选中时） */}
         {isEditMode && isSelected && groupRef.current && (
           <TransformControls
-            object={groupRef.current}
+            object={groupRef.current ?? undefined}
             mode={transformMode}
-            onMouseDown={() => setIsDragging(true)}
+            onMouseDown={(ev) => {
+              ev.stopPropagation()
+            }}
             onMouseUp={() => {
-              setIsDragging(false)
               handleTransformChange()
             }}
           />
@@ -114,7 +144,6 @@ function ArtifactDisplay({ point }: { point: any }) {
     )
   }
 
-  // 根据不同类型显示不同的几何体（模拟文物）
   const getArtifactGeometry = () => {
     switch (point.id) {
       case 'bronze-vessel':
@@ -208,7 +237,13 @@ function ArtifactDisplay({ point }: { point: any }) {
   
   return (
     <>
-      <group ref={groupRef} position={[point.position.x, 1.5, point.position.z]} onClick={handleClick}>
+      <group
+        ref={groupRef}
+        position={groupPosition}
+        rotation={groupRotation}
+        scale={groupScale}
+        onClick={handleClick}
+      >
         {/* 文物模型 */}
         {getArtifactGeometry()}
         
@@ -228,17 +263,26 @@ function ArtifactDisplay({ point }: { point: any }) {
         </Cylinder>
         
         {/* 标签 */}
-        <Text
+        <Html
           position={[0, 2, 0]}
-          fontSize={0.3}
-          color={isActive || isSelected ? '#FFD700' : '#ffffff'}
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={0.02}
-          outlineColor="#000000"
+          center
+          style={{ pointerEvents: 'none' }}
         >
-          {point.name}
-        </Text>
+          <div
+            style={{
+              padding: '4px 10px',
+              borderRadius: '999px',
+              background: isActive || isSelected ? 'rgba(255,215,0,0.9)' : 'rgba(0,0,0,0.6)',
+              color: isActive || isSelected ? '#000' : '#fff',
+              fontSize: '14px',
+              fontWeight: 600,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {point.name}
+          </div>
+        </Html>
         
         {/* 访问标记 */}
         {point.visited && (
@@ -251,11 +295,12 @@ function ArtifactDisplay({ point }: { point: any }) {
       {/* TransformControls（仅编辑模式且选中时） */}
       {isEditMode && isSelected && groupRef.current && (
         <TransformControls
-          object={groupRef.current}
+          object={groupRef.current ?? undefined}
           mode={transformMode}
-          onMouseDown={() => setIsDragging(true)}
+          onMouseDown={(ev) => {
+            ev.stopPropagation()
+          }}
           onMouseUp={() => {
-            setIsDragging(false)
             handleTransformChange()
           }}
         />

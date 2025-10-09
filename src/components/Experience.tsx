@@ -10,8 +10,6 @@ import SceneEnvironment from './SceneEnvironment'
 import TriggerZones from './TriggerZones'
 
 export default function Experience() {
-  const playerPosition = useStore((state) => state.playerPosition)
-  const setPlayerPosition = useStore((state) => state.setPlayerPosition)
   const currentPoint = useStore((state) => state.currentPoint)
   const setCurrentPoint = useStore((state) => state.setCurrentPoint)
   const markPointVisited = useStore((state) => state.markPointVisited)
@@ -29,7 +27,6 @@ export default function Experience() {
         camera.position.y,
         camera.position.z
       )
-      setPlayerPosition(newPosition)
       
       // 检测是否在任何场景点附近
       let inTriggerZone = false

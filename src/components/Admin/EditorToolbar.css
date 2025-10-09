@@ -1,24 +1,24 @@
 .editor-toolbar {
   position: fixed;
-  top: 80px;
+  top: 32px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   gap: 24px;
-  padding: 12px 20px;
-  background: rgba(20, 20, 20, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
-  z-index: 1100;
+  padding: 12px 24px;
+  background: rgba(16, 16, 22, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(20px);
+  z-index: 1300;
 }
 
 .toolbar-section {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 12px;
+  padding: 0 18px;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -44,10 +44,10 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 8px 12px;
+  padding: 8px 14px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
+  border-radius: 10px;
   color: #fff;
   cursor: pointer;
   transition: all 0.2s;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAdminStore } from '../../store/useAdminStore'
 import { useStore } from '../../store/useStore'
 import './ModelLibraryPanel.css'
@@ -9,11 +9,22 @@ export default function ModelLibraryPanel() {
   const setPlacingModelPath = useStore((s) => s.setPlacingModelPath)
   const setSelectedPoint = useStore((s) => s.setSelectedPoint)
   const selectedPointId = useStore((s) => s.selectedPointId)
-  const addScenePoint = useStore((s) => s.addScenePoint)
-  const currentTheme = useStore((s) => s.currentTheme)
 
   const [files, setFiles] = useState<string[]>([])
   const [query, setQuery] = useState('')
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    const stored = localStorage.getItem('editor:model-lib-collapsed')
+    return stored ? stored === 'true' : false
+  })
+  const [panelWidth, setPanelWidth] = useState<number>(() => {
+    if (typeof window === 'undefined') return 360
+    const stored = localStorage.getItem('editor:model-lib-width')
+    const value = stored ? Number(stored) : 360
+    if (Number.isNaN(value)) return 360
+    return Math.min(Math.max(value, 280), 520)
+  })
+  const isResizingRef = useRef(false)
 
   useEffect(() => {
     fetch('/models/index.json')
@@ -21,6 +32,36 @@ export default function ModelLibraryPanel() {
       .then((data) => setFiles(data.files || []))
       .catch(() => setFiles([]))
   }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem('editor:model-lib-collapsed', collapsed ? 'true' : 'false')
+  }, [collapsed])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem('editor:model-lib-width', String(panelWidth))
+  }, [panelWidth])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const handleMove = (event: MouseEvent) => {
+      if (!isResizingRef.current || collapsed) return
+      const newWidth = event.clientX - 32
+      setPanelWidth(Math.min(Math.max(newWidth, 280), 520))
+    }
+
+    const stopResize = () => {
+      isResizingRef.current = false
+    }
+
+    window.addEventListener('mousemove', handleMove)
+    window.addEventListener('mouseup', stopResize)
+    return () => {
+      window.removeEventListener('mousemove', handleMove)
+      window.removeEventListener('mouseup', stopResize)
+    }
+  }, [collapsed])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -33,55 +74,91 @@ export default function ModelLibraryPanel() {
   // 选中模型时禁用放置功能
   const isPlacingDisabled = !!selectedPointId
 
+  if (collapsed) {
+    return (
+      <button
+        className="lib-toggle-floating"
+        onClick={() => setCollapsed(false)}
+        title="展开模型库"
+      >
+        📂 模型库
+      </button>
+    )
+  }
+
   return (
-    <div className="model-lib">
-      <div className="lib-header">
-        <input
-          className="lib-search"
-          placeholder="搜索模型"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        {isPlacingDisabled ? (
-          <div className="lib-selected" style={{ color: 'rgba(255,100,100,0.9)' }}>
-            ⚠️ 请先取消选择（按 Esc）才能放置新模型
-          </div>
-        ) : placingModelPath ? (
-          <div className="lib-selected">
-            待放置: {placingModelPath.split('/').slice(-1)[0]}
-          </div>
-        ) : (
-          <div className="lib-selected" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            点击下方模型以选择
-          </div>
-        )}
-        <button 
-          className="lib-clear" 
-          onClick={() => {
-            setPlacingModelPath(null)
-            setSelectedPoint(null)
-          }} 
-          disabled={!placingModelPath && !selectedPointId}
-        >
-          清除
-        </button>
-      </div>
-      <div className="lib-list">
-        {filtered.map((p) => (
+    <div
+      className="model-lib"
+      style={{ width: `${panelWidth}px` }}
+    >
+      <div className="lib-body">
+        <div className="lib-header">
           <button
-            key={p}
-            className={`lib-item ${placingModelPath === p ? 'active' : ''}`}
-            onClick={() => {
-              if (!isPlacingDisabled) {
-                setPlacingModelPath(p)
-              }
-            }}
-            disabled={isPlacingDisabled}
-            title={isPlacingDisabled ? '请先取消选择（Esc）' : p}
+            className="lib-collapse"
+            onClick={() => setCollapsed(true)}
+            title="收起模型库"
           >
-            {p.split('/').slice(-1)[0]}
+            ‹
           </button>
-        ))}
+          <input
+            className="lib-search"
+            placeholder="搜索模型"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <button
+            className="lib-clear"
+            onClick={() => {
+              setPlacingModelPath(null)
+              setSelectedPoint(null)
+            }}
+            disabled={!placingModelPath && !selectedPointId}
+          >
+            清除
+          </button>
+        </div>
+        <div className="lib-status">
+          {isPlacingDisabled ? (
+            <span className="status-warning">⚠️ 正在编辑：请按 Esc 退出后再放置模型</span>
+          ) : placingModelPath ? (
+            <span className="status-active">待放置：{placingModelPath.split('/').slice(-1)[0]}</span>
+          ) : (
+            <span className="status-tip">点击下方模型以选择，支持拖拽放置</span>
+          )}
+        </div>
+
+        <div className="lib-tabs">
+          <button className="tab active" type="button">模型</button>
+        </div>
+
+        <div className="lib-list">
+          {filtered.length === 0 && (
+            <div className="empty-state">暂无模型，拖入 .glb/.gltf 文件以加载</div>
+          )}
+          {filtered.map((p) => (
+            <button
+              key={p}
+              className={`lib-item ${placingModelPath === p ? 'active' : ''}`}
+              onClick={() => {
+                if (!isPlacingDisabled) {
+                  setPlacingModelPath(p)
+                }
+              }}
+              disabled={isPlacingDisabled}
+              title={isPlacingDisabled ? '请先取消选择（Esc）' : p}
+            >
+              <span className="item-name">{p.split('/').slice(-1)[0]}</span>
+              <span className="item-path">{p.replace('/models/', '')}</span>
+            </button>
+          ))}
+        </div>
+
+        <div
+          className="lib-resize-handle"
+          onMouseDown={() => {
+            isResizingRef.current = true
+          }}
+        />
       </div>
     </div>
   )

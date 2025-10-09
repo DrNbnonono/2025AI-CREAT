@@ -1,22 +1,38 @@
 .model-manager {
   position: fixed;
-  left: 20px;
-  bottom: 20px;
+  left: 32px;
+  bottom: 32px;
   width: 420px;
-  max-height: 70vh;
+  height: 380px;
+  max-height: calc(100vh - 200px);
   background: rgba(26, 32, 44, 0.95);
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 20px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(20px);
-  z-index: 999;
+  z-index: 950;
   overflow: hidden;
-  resize: both; /* 可拖拽拉伸 */
+  display: flex;
+  flex-direction: column;
+  resize: vertical;
+  min-height: 280px;
+}
+
+.model-manager::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 16px;
+  height: 16px;
+  border-right: 2px solid rgba(255, 255, 255, 0.25);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.25);
+  pointer-events: none;
 }
 
 .model-manager:hover {
-  overflow: auto;
+  overflow: hidden;
 }
 
 .manager-header {
@@ -40,7 +56,10 @@
 }
 
 .model-list {
+  flex: 1;
+  overflow-y: auto;
   margin-bottom: 16px;
+  padding-right: 4px;
 }
 
 .model-list h4 {

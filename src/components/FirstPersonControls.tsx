@@ -25,7 +25,7 @@ const FirstPersonControls = forwardRef((props, ref) => {
   // 速度和重力
   const velocity = useRef(new Vector3())
   const direction = useRef(new Vector3())
-  const MOVE_SPEED = 10.0
+  const MOVE_SPEED = 6.0
   const JUMP_VELOCITY = 5.0
   const GRAVITY = -9.8
   const GROUND_HEIGHT = 1.6
@@ -135,8 +135,8 @@ const FirstPersonControls = forwardRef((props, ref) => {
   const lastUpdate = useRef(0)
   useFrame((state, delta) => {
     if (!controlsRef.current || !controlsRef.current.isLocked) return
-    
     const controls = controlsRef.current
+    
     const ms = moveState.current
     
     // 应用重力
@@ -175,8 +175,9 @@ const FirstPersonControls = forwardRef((props, ref) => {
     }
     
     // 更新商店中的玩家位置（每 100ms 更新一次以避免过于频繁）
-    const currentTime = Date.now()
-    if (currentTime - lastUpdate.current > 100) {
+    if (!state.clock.running) return
+    const currentTime = state.clock.elapsedTime * 1000
+    if (currentTime - lastUpdate.current > 150) {
       const currentPos = controls.getObject().position.clone()
       setPlayerPosition(currentPos)
       lastUpdate.current = currentTime
