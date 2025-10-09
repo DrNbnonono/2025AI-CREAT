@@ -9,6 +9,8 @@ export default function ModelLibraryPanel() {
   const setPlacingModelPath = useStore((s) => s.setPlacingModelPath)
   const setSelectedPoint = useStore((s) => s.setSelectedPoint)
   const selectedPointId = useStore((s) => s.selectedPointId)
+  const exportConfiguration = useStore((state) => state.exportConfiguration)
+  const importConfiguration = useStore((state) => state.importConfiguration)
 
   const [files, setFiles] = useState<string[]>([])
   const [query, setQuery] = useState('')
@@ -25,6 +27,37 @@ export default function ModelLibraryPanel() {
     return Math.min(Math.max(value, 280), 520)
   })
   const isResizingRef = useRef(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const handleExport = () => {
+    const data = exportConfiguration()
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `scene-config-${data.currentTheme}-${Date.now()}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImport = async (file: File) => {
+    try {
+      const text = await file.text()
+      const payload = JSON.parse(text)
+      const result = await importConfiguration(payload)
+      if (!result.ok) {
+        const missing = (result.missingModels || []).join('\n')
+        alert(`导入成功，但以下模型缺失:\n${missing}`)
+      } else {
+        alert('配置导入完成')
+      }
+    } catch (error) {
+      console.error('导入配置失败:', error)
+      alert('导入失败，请检查文件格式')
+    }
+  }
 
   useEffect(() => {
     fetch('/models/index.json')
@@ -116,6 +149,24 @@ export default function ModelLibraryPanel() {
           >
             清除
           </button>
+          <button className="lib-action" onClick={handleExport}>导出</button>
+          <button
+            className="lib-action"
+            onClick={() => fileInputRef.current?.click()}
+          >导入</button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json"
+            style={{ display: 'none' }}
+            onChange={(event) => {
+              const file = event.target.files?.[0]
+              if (file) {
+                handleImport(file)
+                event.target.value = ''
+              }
+            }}
+          />
         </div>
         <div className="lib-status">
           {isPlacingDisabled ? (

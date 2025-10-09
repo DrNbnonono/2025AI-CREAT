@@ -10,6 +10,14 @@ export interface ScenePoint extends ScenePointData {
   scale?: number
 }
 
+export interface SceneExportPayload {
+  version: string
+  exportedAt: string
+  currentTheme: SceneThemeType
+  custom: Record<SceneThemeType, ScenePointData[]>
+  deleted: Record<SceneThemeType, string[]>
+}
+
 // 场景主题类型
 export type SceneThemeType = 'museum' | 'redMansion' | 'silkRoad'
 
@@ -65,6 +73,10 @@ interface GameState {
   switchScene: (theme: SceneThemeType) => void
   setShowSceneSelector: (show: boolean) => void
   setIsTransitioning: (transitioning: boolean) => void
+  // 场景配置管理
+  exportConfiguration: () => SceneExportPayload
+  importConfiguration: (payload: SceneExportPayload) => Promise<{ ok: boolean; missingModels?: string[] }>
+  createNewScene: (theme: SceneThemeType, options: { name: string; description: string; defaultPrompt: string }) => void
 }
 
 // 初始化场景点位
@@ -97,7 +109,7 @@ function saveOverrides(data: Overrides) {
 }
 
 function initializeScenePoints(theme: SceneThemeType): ScenePoint[] {
-  const base = sceneDataMap[theme]
+  const base = sceneDataMap[theme] || []
   const overrides = loadOverrides()
   const deletedIds = new Set(overrides.deleted[theme] || [])
   const filtered = base.filter(p => !deletedIds.has(p.id))
@@ -267,4 +279,87 @@ export const useStore = create<GameState>((set, get) => ({
   
   setShowSceneSelector: (show) => set({ showSceneSelector: show }),
   setIsTransitioning: (transitioning) => set({ isTransitioning: transitioning }),
+
+  exportConfiguration: () => {
+    const overrides = loadOverrides()
+    const payload: SceneExportPayload = {
+      version: '1.0.0',
+      exportedAt: new Date().toISOString(),
+      currentTheme: get().currentTheme,
+      custom: overrides.custom,
+      deleted: overrides.deleted,
+    }
+    return payload
+  },
+
+  importConfiguration: async (payload) => {
+    try {
+      if (!payload || !payload.version || !payload.custom || !payload.deleted) {
+        throw new Error('配置格式不正确')
+      }
+
+      // 检测模型是否存在
+      const response = await fetch('/models/index.json')
+      const data = await response.json()
+      const available = new Set<string>((data.files || []) as string[])
+      const missing: string[] = []
+
+      Object.values(payload.custom).forEach((points) => {
+        points?.forEach((p) => {
+          if (p.modelPath && !available.has(p.modelPath)) {
+            missing.push(p.modelPath)
+          }
+        })
+      })
+
+      saveOverrides({
+        custom: payload.custom,
+        deleted: payload.deleted,
+      })
+
+      // 重新初始化当前主题
+      const theme = payload.currentTheme || 'museum'
+      set({
+        currentTheme: theme,
+        scenePoints: initializeScenePoints(theme),
+        currentPoint: null,
+        selectedPointId: null,
+      })
+
+      return { ok: missing.length === 0, missingModels: missing }
+    } catch (error) {
+      console.error('导入配置失败:', error)
+      return { ok: false }
+    }
+  },
+
+  createNewScene: (theme, options) => {
+    const overrides = loadOverrides()
+    if (!sceneDataMap[theme]) {
+      sceneDataMap[theme] = []
+    }
+    if (!overrides.custom[theme]) overrides.custom[theme] = []
+    if (!overrides.deleted[theme]) overrides.deleted[theme] = []
+
+    const defaultPoint: ScenePointData = {
+      id: `${theme}-intro-${Date.now()}`,
+      name: options.name,
+      position: new Vector3(0, 0, 0),
+      radius: 5,
+      description: options.description,
+      aiContext: options.defaultPrompt,
+      modelPath: '',
+    }
+
+    overrides.custom[theme] = [defaultPoint]
+    saveOverrides(overrides)
+
+    set({
+      currentTheme: theme,
+      scenePoints: initializeScenePoints(theme),
+      currentPoint: null,
+      selectedPointId: null,
+      showSceneSelector: false,
+    })
+  },
 }))

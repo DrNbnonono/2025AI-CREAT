@@ -157,6 +157,29 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
+.manager-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.manager-actions .action-btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+}
+
+.manager-actions .action-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffd700;
+}
+
 /* 添加表单 */
 .add-form-overlay {
   position: fixed;
@@ -214,6 +237,23 @@
 
 .form-field input:focus,
 .form-field textarea:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 215, 0, 0.5);
+}
+
+.add-form select {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.add-form select:focus {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 215, 0, 0.5);
 }

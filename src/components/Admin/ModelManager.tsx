@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Vector3 } from 'three'
 import { useStore, type SceneThemeType } from '../../store/useStore'
 import { useAdminStore } from '../../store/useAdminStore'
@@ -10,8 +10,13 @@ export default function ModelManager() {
   const scenePoints = useStore((state) => state.scenePoints)
   const addScenePoint = useStore((state) => state.addScenePoint)
   const deleteScenePoint = useStore((state) => state.deleteScenePoint)
+  const exportConfiguration = useStore((state) => state.exportConfiguration)
+  const importConfiguration = useStore((state) => state.importConfiguration)
+  const createNewScene = useStore((state) => state.createNewScene)
+  const setCurrentTheme = useStore((state) => state.switchScene)
   
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showSceneForm, setShowSceneForm] = useState(false)
   const [formData, setFormData] = useState({
     id: '',
     name: '',
@@ -21,7 +26,14 @@ export default function ModelManager() {
     aiContext: '',
     modelPath: '/models/neighbourhood/source/Untitled.glb',
   })
+  const [sceneForm, setSceneForm] = useState({
+    theme: 'museum' as SceneThemeType,
+    name: '',
+    description: '',
+    prompt: '',
+  })
   const [modelOptions, setModelOptions] = useState<string[]>([])
+  const importInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     fetch('/models/index.json')
@@ -45,12 +57,78 @@ export default function ModelManager() {
     })
     setShowAddForm(false)
   }
+
+  const handleExport = () => {
+    const data = exportConfiguration()
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `scene-config-${data.currentTheme}-${Date.now()}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImport = async (file: File) => {
+    try {
+      const text = await file.text()
+      const payload = JSON.parse(text)
+      const result = await importConfiguration(payload)
+      if (!result.ok) {
+        const missing = (result.missingModels || []).join('\n')
+        alert(`导入成功，但以下模型缺失:\n${missing}`)
+      } else {
+        alert('场景配置导入完成')
+      }
+    } catch (error) {
+      console.error('导入失败:', error)
+      alert('导入失败，请检查文件格式')
+    }
+  }
+
+  const handleCreateScene = () => {
+    if (!sceneForm.prompt || !sceneForm.name) {
+      alert('请填写场景名称和默认提示词')
+      return
+    }
+    createNewScene(sceneForm.theme, {
+      name: sceneForm.name,
+      description: sceneForm.description,
+      defaultPrompt: sceneForm.prompt,
+    })
+    setCurrentTheme(sceneForm.theme)
+    setShowSceneForm(false)
+    setSceneForm({ theme: 'museum', name: '', description: '', prompt: '' })
+  }
   
   return (
     <div className="model-manager">
       <div className="manager-header">
         <h3>📦 模型管理</h3>
         <span className="current-scene">当前场景: {getSceneName(currentTheme)}</span>
+      </div>
+
+      <div className="manager-actions">
+        <button className="action-btn" onClick={() => setShowAddForm(true)}>➕ 添加点位</button>
+        <button className="action-btn" onClick={handleExport}>📤 导出配置</button>
+        <button className="action-btn" onClick={() => document.getElementById('scene-import-input')?.click()}>📥 导入配置</button>
+        <button className="action-btn" onClick={() => setShowSceneForm(true)}>🆕 新建场景</button>
+        <input
+          id="scene-import-input"
+          type="file"
+          accept="application/json"
+          style={{ display: 'none' }}
+          ref={importInputRef}
+          onChange={(event) => {
+            const file = event.target.files?.[0]
+            if (file) {
+              handleImport(file)
+              event.target.value = ''
+            }
+          }}
+        />
       </div>
       
       <div className="model-list">
@@ -73,10 +151,6 @@ export default function ModelManager() {
           </div>
         ))}
       </div>
-      
-      <button className="btn-add-model" onClick={() => setShowAddForm(true)}>
-        ➕ 添加新点位
-      </button>
       
       {showAddForm && (
         <div className="add-form-overlay" onClick={() => setShowAddForm(false)}>
@@ -171,6 +245,54 @@ export default function ModelManager() {
             <div className="form-buttons">
               <button className="btn-save" onClick={handleAddPoint}>保存</button>
               <button className="btn-cancel" onClick={() => setShowAddForm(false)}>取消</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSceneForm && (
+        <div className="add-form-overlay" onClick={() => setShowSceneForm(false)}>
+          <div className="add-form" onClick={(e) => e.stopPropagation()}>
+            <h3>创建新场景</h3>
+            <div className="form-field">
+              <label>主题标识</label>
+              <select
+                value={sceneForm.theme}
+                onChange={(e) => setSceneForm({ ...sceneForm, theme: e.target.value as SceneThemeType })}
+              >
+                <option value="museum">museum</option>
+                <option value="redMansion">redMansion</option>
+                <option value="silkRoad">silkRoad</option>
+              </select>
+            </div>
+            <div className="form-field">
+              <label>场景名称</label>
+              <input
+                value={sceneForm.name}
+                onChange={(e) => setSceneForm({ ...sceneForm, name: e.target.value })}
+                placeholder="例如：清明上河图场景"
+              />
+            </div>
+            <div className="form-field">
+              <label>场景描述</label>
+              <input
+                value={sceneForm.description}
+                onChange={(e) => setSceneForm({ ...sceneForm, description: e.target.value })}
+                placeholder="一句话描述"
+              />
+            </div>
+            <div className="form-field">
+              <label>默认 AI 提示词</label>
+              <textarea
+                value={sceneForm.prompt}
+                onChange={(e) => setSceneForm({ ...sceneForm, prompt: e.target.value })}
+                rows={6}
+                placeholder="请填写默认的场景介绍或导览词，用户进入场景时将作为系统提示词。"
+              />
+            </div>
+            <div className="form-buttons">
+              <button className="btn-save" onClick={handleCreateScene}>创建场景</button>
+              <button className="btn-cancel" onClick={() => setShowSceneForm(false)}>取消</button>
             </div>
           </div>
         </div>
