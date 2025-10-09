@@ -58,6 +58,30 @@ export default function ModelManager() {
       .catch(() => setModelOptions([]))
   }, [])
 
+  // 顶部拖拽调整高度
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return
+      const deltaY = startYRef.current - e.clientY
+      const newHeight = Math.max(300, Math.min(startHeightRef.current + deltaY, window.innerHeight - 200))
+      setPanelHeight(newHeight)
+    }
+
+    const handleMouseUp = () => {
+      isDraggingRef.current = false
+    }
+
+    if (isDraggingRef.current) {
+      window.addEventListener('mousemove', handleMouseMove)
+      window.addEventListener('mouseup', handleMouseUp)
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isDraggingRef.current])
+
   useEffect(() => {
     if (typeof window === 'undefined') return
     const maxHeight = Math.max(260, window.innerHeight - 200)

@@ -16,8 +16,21 @@
   overflow: hidden;
 }
 
-.model-manager::after {
-  content: none;
+.resize-handle-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 12px;
+  cursor: ns-resize;
+  background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%);
+  border-radius: 16px 16px 0 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.model-manager:hover .resize-handle-top {
+  opacity: 1;
 }
 
 
