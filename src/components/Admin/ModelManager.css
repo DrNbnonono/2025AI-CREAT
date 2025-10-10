@@ -205,6 +205,20 @@
   color: #ffd700;
 }
 
+.manager-actions .action-btn-danger {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+.manager-actions .action-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
 /* 添加表单 */
 .add-form-overlay {
   position: fixed;
@@ -217,17 +231,42 @@
   justify-content: center;
   align-items: center;
   z-index: 10000;
+  overflow-y: auto; /* 允许整个 overlay 滚动 */
+  padding: 20px 0; /* 上下留出空间 */
 }
 
 .add-form {
-  background: rgba(26, 32, 44, 0.95);
+  background: rgba(26, 32, 44, 0.98);
   border-radius: 12px;
   padding: 30px;
   width: 720px;
   max-width: 95%;
-  max-height: 85vh;
-  overflow-y: auto;
+  max-height: none; /* 移除最大高度限制 */
+  margin: auto; /* 垂直居中 */
   border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  /* 改进滚动条样式 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 215, 0, 0.5) rgba(255, 255, 255, 0.1);
+}
+
+/* WebKit浏览器滚动条样式 */
+.add-form::-webkit-scrollbar {
+  width: 8px;
+}
+
+.add-form::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.add-form::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.5);
+  border-radius: 4px;
+}
+
+.add-form::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 215, 0, 0.7);
 }
 
 .add-form h3 {

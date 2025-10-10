@@ -1,9 +1,10 @@
-import { useRef, useMemo, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Box, Sphere, Cylinder, useGLTF, TransformControls, Html } from '@react-three/drei'
+import { Box, Sphere, Cylinder, TransformControls, Html } from '@react-three/drei'
 import { useStore } from '../store/useStore'
 import { useAdminStore } from '../store/useAdminStore'
 import { useTransformMode } from './Admin/EditorToolbar'
+import UniversalModelLoader from './UniversalModelLoader'
 import * as THREE from 'three'
 
 // 创建程序化石砖纹理
@@ -46,16 +47,74 @@ function createBrickTexture() {
 
 export default function SceneEnvironment() {
   const scenePoints = useStore((state) => state.scenePoints)
+  const setGroundBounds = useStore((state) => state.setGroundBounds)
+  
+  // 动态计算场地大小
+  const calculateGroundSize = () => {
+    if (scenePoints.length === 0) return { 
+      size: 100, 
+      position: [0, 0] as [number, number],
+      bounds: { minX: -50, maxX: 50, minZ: -50, maxZ: 50 }
+    }
+    
+    let minX = Infinity, maxX = -Infinity
+    let minZ = Infinity, maxZ = -Infinity
+    
+    scenePoints.forEach(point => {
+      const x = point.position.x
+      const z = point.position.z
+      const scale = point.scale || 1
+      const scaleValue = typeof scale === 'number' ? scale : Math.max(...(scale as number[]))
+      // 使用较大的半径来确保地面足够大
+      const radius = Math.max(point.radius || 3, scaleValue * 3)
+      
+      minX = Math.min(minX, x - radius)
+      maxX = Math.max(maxX, x + radius)
+      minZ = Math.min(minZ, z - radius)
+      maxZ = Math.max(maxZ, z + radius)
+    })
+    
+    // 添加边距
+    const padding = 20
+    const width = Math.max(100, maxX - minX + padding * 2)
+    const depth = Math.max(100, maxZ - minZ + padding * 2)
+    const size = Math.max(width, depth)
+    
+    const centerX = (minX + maxX) / 2
+    const centerZ = (minZ + maxZ) / 2
+    
+    // 计算实际边界（用于碰撞检测）
+    const halfSize = size / 2
+    const bounds = {
+      minX: centerX - halfSize + 5,  // 留5单位边距
+      maxX: centerX + halfSize - 5,
+      minZ: centerZ - halfSize + 5,
+      maxZ: centerZ + halfSize - 5
+    }
+    
+    return { 
+      size: Math.ceil(size / 10) * 10, // 向上取整到10的倍数
+      position: [centerX, centerZ] as [number, number],
+      bounds
+    }
+  }
+  
+  const groundConfig = calculateGroundSize()
+  
+  // 更新碰撞边界到 store
+  useEffect(() => {
+    setGroundBounds(groundConfig.bounds)
+  }, [scenePoints, setGroundBounds])
   
   return (
     <group>
       {/* 地面 */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, 0, 0]}
+        position={[groundConfig.position[0], 0, groundConfig.position[1]]}
         receiveShadow
       >
-        <planeGeometry args={[100, 100]} />
+        <planeGeometry args={[groundConfig.size, groundConfig.size]} />
         <meshStandardMaterial
           color="#2d3748"
           roughness={0.8}
@@ -64,7 +123,10 @@ export default function SceneEnvironment() {
       </mesh>
       
       {/* 网格辅助线 */}
-      <gridHelper args={[100, 50, '#4a5568', '#2d3748']} />
+      <gridHelper 
+        args={[groundConfig.size, Math.floor(groundConfig.size / 2), '#4a5568', '#2d3748']} 
+        position={[groundConfig.position[0], 0, groundConfig.position[1]]}
+      />
       
       {/* 场景点位的文物展示 */}
       {scenePoints.map((point) => (
@@ -80,7 +142,7 @@ export default function SceneEnvironment() {
 // 文物展示组件
 function ArtifactDisplay({ point }: { point: any }) {
   const groupRef = useRef<THREE.Group | null>(null)
-  const meshRef = useRef<THREE.Mesh>(null)
+  const meshRef = useRef<THREE.Group>(null)
   const currentPoint = useStore((state) => state.currentPoint)
   const isActive = currentPoint?.id === point.id
   
@@ -147,7 +209,7 @@ function ArtifactDisplay({ point }: { point: any }) {
           scale={groupScale}
           onClick={handleClick}
         >
-          <ModelObject url={point.modelPath} highlight={isActive || isSelected} name={point.name} />
+          <UniversalModelLoader url={point.modelPath} highlight={isActive || isSelected} name={point.name} />
           <Html
             position={[0, 2, 0]}
             center
@@ -190,18 +252,15 @@ function ArtifactDisplay({ point }: { point: any }) {
           </meshStandardMaterial>
         </mesh>
         
-        {isEditMode && isSelected && groupRef.current && (
-          <TransformControls
-            object={groupRef.current ?? undefined}
-            mode={transformMode}
-            onMouseDown={(e) => {
-              if (e) e.stopPropagation()
-            }}
-            onMouseUp={() => {
-              handleTransformChange()
-            }}
-          />
-        )}
+      {isEditMode && isSelected && groupRef.current && (
+        <TransformControls
+          object={groupRef.current ?? undefined}
+          mode={transformMode}
+          onMouseUp={() => {
+            handleTransformChange()
+          }}
+        />
+      )}
       </>
     )
   }
@@ -290,9 +349,10 @@ function ArtifactDisplay({ point }: { point: any }) {
       
       default:
         return (
-          <Sphere ref={meshRef} args={[1, 32, 32]} castShadow>
+          <mesh castShadow>
+            <sphereGeometry args={[1, 32, 32]} />
             <meshStandardMaterial color="#ffd700" />
-          </Sphere>
+          </mesh>
         )
     }
   }
@@ -365,9 +425,6 @@ function ArtifactDisplay({ point }: { point: any }) {
         <TransformControls
           object={groupRef.current ?? undefined}
           mode={transformMode}
-          onMouseDown={(e) => {
-            if (e) e.stopPropagation()
-          }}
           onMouseUp={() => {
             handleTransformChange()
           }}
@@ -377,62 +434,10 @@ function ArtifactDisplay({ point }: { point: any }) {
   )
 }
 
-// 加载 GLTF/GLB 模型（性能优化版本）
-function ModelObject({ url, highlight }: { url: string; highlight: boolean; name: string }) {
-  const { scene } = useGLTF(url) as any
-  const meshRef = useRef<THREE.Group>()
-  
-  // 仅在高亮变化时更新材质（性能优化）
-  useEffect(() => {
-    if (!meshRef.current) return
-    
-    meshRef.current.traverse((obj: any) => {
-      if (obj.isMesh && obj.material) {
-        obj.castShadow = true
-        obj.receiveShadow = true
-        if (obj.material.emissive) {
-          obj.material.emissive = new THREE.Color(highlight ? '#FFD700' : '#000000')
-          obj.material.emissiveIntensity = highlight ? 0.15 : 0
-          obj.material.needsUpdate = true
-        }
-      }
-    })
-  }, [highlight])
-  
-  // 克隆场景以支持多实例（性能优化：复用几何体）
-  const clonedScene = useMemo(() => scene.clone(), [scene])
-  
-  const s = 1
-  return <primitive ref={meshRef} object={clonedScene} scale={[s, s, s]} />
-}
+// 注意：ModelObject 已被 UniversalModelLoader 替代
+// UniversalModelLoader 支持更多格式：.glb, .gltf, .fbx, .obj, .dae, .skp
 
 // 环境装饰
 function EnvironmentDecoration() {
-  return (
-    <group>
-      {/* 一些装饰柱子 */}
-      {Array.from({ length: 8 }).map((_, i) => {
-        const angle = (i / 8) * Math.PI * 2
-        const radius = 15
-        return (
-          <Cylinder
-            key={i}
-            args={[0.3, 0.3, 5, 8]}
-            position={[
-              Math.cos(angle) * radius,
-              2.5,
-              Math.sin(angle) * radius,
-            ]}
-            castShadow
-          >
-            <meshStandardMaterial
-              color="#8b4513"
-              roughness={0.7}
-              metalness={0.1}
-            />
-          </Cylinder>
-        )
-      })}
-    </group>
-  )
+  return null  // 移除装饰柱子
 }

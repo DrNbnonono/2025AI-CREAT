@@ -4,13 +4,14 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 import { Vector3 } from 'three'
 import { useStore } from '../store/useStore'
 
-const FirstPersonControls = forwardRef((props, ref) => {
+const FirstPersonControls = forwardRef((_props, ref) => {
   const { camera, gl } = useThree()
   const controlsRef = useRef<PointerLockControls | null>(null)
   const playerPosition = useStore((state) => state.playerPosition)
   const setPlayerPosition = useStore((state) => state.setPlayerPosition)
   const setPointerLocked = useStore((state) => state.setPointerLocked)
   const setShowInstructions = useStore((state) => state.setShowInstructions)
+  const scenePoints = useStore((state) => state.scenePoints)
   
   // 移动状态
   const moveState = useRef({
@@ -25,7 +26,7 @@ const FirstPersonControls = forwardRef((props, ref) => {
   // 速度和重力
   const velocity = useRef(new Vector3())
   const direction = useRef(new Vector3())
-  const MOVE_SPEED = 6.0
+  const MOVE_SPEED = 12.0
   const JUMP_VELOCITY = 5.0
   const GRAVITY = -9.8
   const GROUND_HEIGHT = 1.6
@@ -131,6 +132,40 @@ const FirstPersonControls = forwardRef((props, ref) => {
     }
   }, [playerPosition, camera])
 
+  // 碰撞检测辅助函数
+  const checkCollision = (newPos: Vector3) => {
+    const playerRadius = 0.5 // 玩家碰撞半径
+    
+    // 只检查与模型的碰撞，允许玩家在场景中自由移动
+    for (const point of scenePoints) {
+      // 检查是否有自定义碰撞半径
+      let collisionRadius: number
+      
+      if (point.collisionRadius === 0) {
+        // collisionRadius 为 0，表示无碰撞，可穿过
+        continue
+      } else if (point.collisionRadius !== undefined) {
+        // 使用自定义碰撞半径
+        collisionRadius = point.collisionRadius
+      } else {
+        // 自动计算碰撞半径（默认行为）
+        const scale = point.scale || 1
+        const scaleValue = typeof scale === 'number' ? scale : Math.max(...(scale as number[]))
+        collisionRadius = Math.max(scaleValue * 1.2, 1.5) // 根据模型缩放动态调整，最小1.5米
+      }
+      
+      const dx = newPos.x - point.position.x
+      const dz = newPos.z - point.position.z
+      const distance = Math.sqrt(dx * dx + dz * dz)
+      
+      if (distance < collisionRadius + playerRadius) {
+        return true // 发生碰撞
+      }
+    }
+    
+    return false // 无碰撞
+  }
+
   // 每帧更新移动
   const lastUpdate = useRef(0)
   useFrame((state, delta) => {
@@ -160,9 +195,22 @@ const FirstPersonControls = forwardRef((props, ref) => {
       velocity.current.x = 0
     }
     
-    // 应用移动
+    // 保存当前位置
+    const currentPos = controls.getObject().position.clone()
+    
+    // 尝试应用移动
     controls.moveForward(-velocity.current.z)
     controls.moveRight(-velocity.current.x)
+    
+    // 获取新位置
+    const newPos = controls.getObject().position.clone()
+    
+    // 检查碰撞
+    if (checkCollision(newPos)) {
+      // 发生碰撞，恢复到之前的位置
+      controls.getObject().position.copy(currentPos)
+      camera.position.copy(currentPos)
+    }
     
     // 垂直移动和碰撞检测
     camera.position.y += velocity.current.y * delta
@@ -174,7 +222,7 @@ const FirstPersonControls = forwardRef((props, ref) => {
       ms.canJump = true
     }
     
-    // 更新商店中的玩家位置（每 100ms 更新一次以避免过于频繁）
+    // 更新商店中的玩家位置（每 150ms 更新一次以避免过于频繁）
     if (!state.clock.running) return
     const currentTime = state.clock.elapsedTime * 1000
     if (currentTime - lastUpdate.current > 150) {
@@ -190,3 +238,4 @@ const FirstPersonControls = forwardRef((props, ref) => {
 FirstPersonControls.displayName = 'FirstPersonControls'
 
 export default FirstPersonControls
+

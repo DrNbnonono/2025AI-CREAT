@@ -267,9 +267,27 @@
 
 ### 添加 3D 模型
 
-1. 将 GLB/GLTF 模型文件放入 `public/models/` 目录
-2. 在 `SceneEnvironment.tsx` 中使用 `useGLTF` 加载模型
-3. 建议使用 Draco 压缩以减小文件大小
+**支持的格式**:
+- ✅ **GLB/GLTF** (推荐，Web 优化格式)
+- ✅ **FBX** (Autodesk 格式)
+- ✅ **OBJ** (Wavefront 格式)
+- ✅ **DAE** (Collada 格式，SketchUp 常用)
+- ⚠️ **SKP** (SketchUp 原生格式，需转换为 GLB/GLTF)
+
+**使用步骤**:
+1. 将模型文件放入 `public/models/` 目录
+2. 开发模式会自动扫描并添加到模型库
+3. 在管理员模式中选择并放置模型
+
+**SKP 文件转换**:
+- 在线工具: https://products.aspose.app/3d/zh/conversion/skp-to-gltf
+- 或使用 Blender 导出为 GLB 格式
+- 详见 `支持的3D模型格式说明.md`
+
+**优化建议**:
+- 使用 Draco 压缩: `npx gltf-transform draco input.glb output.glb`
+- 单个模型 < 10MB，三角面 < 50K (移动端) 或 < 200K (桌面端)
+- 纹理分辨率 ≤ 2048x2048
 
 ### 更换 AI 服务
 

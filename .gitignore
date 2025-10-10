@@ -33,3 +33,14 @@ public/models/**/*.glb
 public/models/**/*.gltf
 !public/models/.gitkeep
 !public/models/index.json
+
+# LaTeX project (do not commit)
+latex模板/
+
+# Additional heavy 3D assets
+public/models/**/*.zip
+public/models/**/*.skp
+public/models/**/textures/**
+public/models/**/*.png
+public/models/**/*.jpg
+public/models/**/*.jpeg

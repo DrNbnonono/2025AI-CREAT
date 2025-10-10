@@ -66,8 +66,8 @@ export default function Experience() {
       {/* 场景环境（地面、文物等） */}
       <SceneEnvironment />
       
-      {/* 触发区域可视化（开发时） */}
-      {import.meta.env.DEV && <TriggerZones />}
+      {/* 触发区域可视化（开发时或编辑模式下） */}
+      <TriggerZones />
     </>
   )
 }

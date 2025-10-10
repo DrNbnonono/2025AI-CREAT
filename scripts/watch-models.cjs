@@ -1,4 +1,5 @@
 // Watch public/models for changes and keep index.json updated
+// Supported formats: .glb, .gltf, .fbx, .obj, .dae, .skp
 // Usage: node scripts/watch-models.cjs
 
 const fs = require('fs')
@@ -15,7 +16,7 @@ function walk(dir) {
     const full = path.join(dir, entry.name)
     if (entry.isDirectory()) {
       results.push(...walk(full))
-    } else if (/\.(glb|gltf)$/i.test(entry.name)) {
+    } else if (/\.(glb|gltf|fbx|obj|dae|skp)$/i.test(entry.name)) {
       const rel = path.relative(path.join(ROOT, 'public'), full).replace(/\\/g, '/')
       results.push('/' + rel)
     }

@@ -1,0 +1,11 @@
+.trigger-radius-label {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(255, 215, 0, 0.9);
+  color: #000;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+

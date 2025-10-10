@@ -36,7 +36,13 @@ export default function SceneSelector() {
         <div className="scene-cards">
           {availableScenes.map((theme) => {
             const meta = sceneMeta[theme]
-            if (!meta) return null
+            // 如果没有元数据，创建一个默认的
+            const displayMeta = meta || {
+              id: theme,
+              name: theme,
+              description: '自定义场景',
+              icon: '🎭'
+            }
             const isActive = currentTheme === theme
             
             return (
@@ -45,15 +51,15 @@ export default function SceneSelector() {
                 className={`scene-card ${isActive ? 'active' : ''}`}
                 onClick={() => handleSceneClick(theme)}
               >
-                <div className="scene-icon">{meta.icon || '🎭'}</div>
-                <h3 className="scene-name">{meta.name}</h3>
-                <p className="scene-description">{meta.description}</p>
+                <div className="scene-icon">{displayMeta.icon || '🎭'}</div>
+                <h3 className="scene-name">{displayMeta.name}</h3>
+                <p className="scene-description">{displayMeta.description}</p>
                 
-                {meta.items && meta.items.length > 0 && (
+                {displayMeta.items && displayMeta.items.length > 0 && (
                   <div className="scene-items">
                     <h4>包含场景：</h4>
                     <ul>
-                      {meta.items.map((item, index) => (
+                      {displayMeta.items.map((item, index) => (
                         <li key={index}>{item}</li>
                       ))}
                     </ul>

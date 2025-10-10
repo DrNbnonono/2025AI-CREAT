@@ -57,20 +57,28 @@
 }
 
 .property-group input[type="text"],
-.property-group input[type="number"] {
+.property-group input[type="number"],
+.property-group textarea {
   padding: 10px 12px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 10px;
   color: #fff;
   font-size: 13px;
+  font-family: inherit;
   transition: all 0.2s;
+  resize: vertical;
 }
 
-.property-group input:focus {
+.property-group input:focus,
+.property-group textarea:focus {
   outline: none;
   border-color: rgba(255, 215, 0, 0.6);
   background: rgba(255, 255, 255, 0.08);
+}
+
+.property-group textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .xyz-input {
@@ -96,6 +104,119 @@
   font-size: 12px;
   word-break: break-all;
   font-family: monospace;
+}
+
+.apply-btn {
+  padding: 12px 20px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.18), rgba(255, 215, 0, 0.12));
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  border-radius: 12px;
+  color: rgba(255, 215, 0, 0.95);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.apply-btn:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 215, 0, 0.18));
+  border-color: rgba(255, 215, 0, 0.6);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+}
+
+.apply-btn:active {
+  transform: translateY(0);
+}
+
+/* 自定义滚动条 */
+.panel-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.panel-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Range滑块样式 */
+.property-group input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.property-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(255, 215, 0, 0.4);
+  transition: all 0.2s;
+}
+
+.property-group input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 3px 10px rgba(255, 215, 0, 0.6);
+}
+
+.property-group input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(255, 215, 0, 0.4);
+  transition: all 0.2s;
+}
+
+.property-group input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 3px 10px rgba(255, 215, 0, 0.6);
+}
+
+/* 提示文本样式 */
+.hint-text {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+}
+
+.property-group label .hint-text {
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+/* 半径滑块样式 */
+.radius-slider {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+/* 半径提示文本 */
+.radius-hint {
+  font-size: 11px;
+  margin-top: 4px;
+  opacity: 0.7;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 

@@ -56,15 +56,6 @@ function normalizePoint(point: ScenePointData | ScenePointSerialized | ScenePoin
   }
 }
 
-function serializeVector3(value?: Vector3): SerializableVector | undefined {
-  if (!value) return undefined
-  return {
-    x: Number.isFinite(value.x) ? value.x : 0,
-    y: Number.isFinite(value.y) ? value.y : 0,
-    z: Number.isFinite(value.z) ? value.z : 0,
-  }
-}
-
 function serializePoint(point: ScenePointData): ScenePointSerialized {
   const normalized = normalizePoint(point)
   const { position, rotation, ...rest } = normalized
@@ -187,6 +178,7 @@ interface GameState {
   isTransitioning: boolean
   availableScenes: SceneThemeType[]
   sceneMeta: Record<SceneThemeType, SceneMeta>
+  groundBounds: { minX: number; maxX: number; minZ: number; maxZ: number } | null
   // Admin selection / placement
   selectedPointId: string | null
   placingModelPath: string | null
@@ -220,10 +212,13 @@ interface GameState {
   switchScene: (theme: SceneThemeType) => void
   setShowSceneSelector: (show: boolean) => void
   setIsTransitioning: (transitioning: boolean) => void
+  setGroundBounds: (bounds: { minX: number; maxX: number; minZ: number; maxZ: number } | null) => void
   // 场景配置管理
   exportConfiguration: () => SceneExportPayload
   importConfiguration: (payload: SceneExportPayload) => Promise<{ ok: boolean; missingModels?: string[] }>
   createNewScene: (theme: SceneThemeType, options: { name: string; description: string; defaultPrompt: string; icon?: string }) => void
+  updateSceneMeta: (theme: SceneThemeType, updates: Partial<SceneMeta>) => void
+  deleteScene: (theme: SceneThemeType) => boolean
 }
 
 // 初始化场景点位
@@ -339,6 +334,7 @@ export const useStore = create<GameState>((set, get) => {
     isTransitioning: false,
     availableScenes: computeAvailableScenes(overrides.meta, overrides.custom),
     sceneMeta: overrides.meta,
+    groundBounds: null,
     // Admin selection / placement
     selectedPointId: null,
     placingModelPath: null,
@@ -408,11 +404,13 @@ export const useStore = create<GameState>((set, get) => {
   // 场景切换（带过场动画）
   switchScene: (theme) => {
     const overrides = loadOverrides()
+    const mergedMeta = mergeSceneMeta(overrides.meta, overrides.custom)
+    
     set({
       isTransitioning: true,
       showSceneSelector: false,
-      sceneMeta: overrides.meta,
-      availableScenes: computeAvailableScenes(overrides.meta, overrides.custom),
+      sceneMeta: mergedMeta,
+      availableScenes: computeAvailableScenes(mergedMeta, overrides.custom),
     })
     
     setTimeout(() => {
@@ -441,7 +439,16 @@ export const useStore = create<GameState>((set, get) => {
     // 更新本地覆盖
     const overrides = loadOverrides()
     overrides.custom[theme] = [...(overrides.custom[theme] || []), point]
+    
+    // 更新场景meta的items列表
+    const allPoints = initializeScenePoints(theme, overrides)
+    if (overrides.meta[theme]) {
+      overrides.meta[theme].items = allPoints.map(p => p.name)
+    }
+    
     saveOverrides(overrides)
+    // 更新全局meta状态
+    set({ sceneMeta: overrides.meta })
   },
 
   // 删除场景点位（支持删除默认与自定义）
@@ -462,7 +469,16 @@ export const useStore = create<GameState>((set, get) => {
     if (baseHas) {
       if (!overrides.deleted[theme].includes(pointId)) overrides.deleted[theme].push(pointId)
     }
+    
+    // 更新场景meta的items列表
+    const allPoints = initializeScenePoints(theme, overrides)
+    if (overrides.meta[theme]) {
+      overrides.meta[theme].items = allPoints.map(p => p.name)
+    }
+    
     saveOverrides(overrides)
+    // 更新全局meta状态
+    set({ sceneMeta: overrides.meta })
   },
 
   // 更新场景点位
@@ -493,6 +509,7 @@ export const useStore = create<GameState>((set, get) => {
   
   setShowSceneSelector: (show) => set({ showSceneSelector: show }),
   setIsTransitioning: (transitioning) => set({ isTransitioning: transitioning }),
+  setGroundBounds: (bounds) => set({ groundBounds: bounds }),
 
   exportConfiguration: () => {
     const overrides = loadOverrides()
@@ -525,20 +542,27 @@ export const useStore = create<GameState>((set, get) => {
         })
       })
 
+      const normalizedCustom: Record<SceneThemeType, ScenePointData[]> = {}
+      Object.entries(payload.custom).forEach(([theme, list]) => {
+        normalizedCustom[theme] = list.map(p => normalizePoint(p))
+      })
+
       saveOverrides({
-        custom: payload.custom,
+        custom: normalizedCustom,
         deleted: payload.deleted,
         meta: payload.meta,
       })
 
       const theme = payload.currentTheme || 'museum'
+      const mergedMeta = mergeSceneMeta(payload.meta, normalizedCustom)
+      
       set({
         currentTheme: theme,
         scenePoints: initializeScenePoints(theme),
         currentPoint: null,
         selectedPointId: null,
-        sceneMeta: payload.meta,
-        availableScenes: computeAvailableScenes(payload.meta, payload.custom),
+        sceneMeta: mergedMeta,
+        availableScenes: computeAvailableScenes(mergedMeta, normalizedCustom),
       })
 
       return { ok: missing.length === 0, missingModels: missing }
@@ -572,8 +596,12 @@ export const useStore = create<GameState>((set, get) => {
       name: options.name,
       description: options.description,
       icon: options.icon || '🎭',
+      items: [], // 初始为空，点位列表将动态生成
     }
     saveOverrides(overrides)
+
+    // 使用 mergeSceneMeta 确保所有场景（包括默认场景）的 meta 都被包含
+    const mergedMeta = mergeSceneMeta(overrides.meta, overrides.custom)
 
     set({
       currentTheme: theme,
@@ -581,9 +609,101 @@ export const useStore = create<GameState>((set, get) => {
       currentPoint: null,
       selectedPointId: null,
       showSceneSelector: false,
-      sceneMeta: overrides.meta,
-      availableScenes: computeAvailableScenes(overrides.meta, overrides.custom),
+      sceneMeta: mergedMeta,
+      availableScenes: computeAvailableScenes(mergedMeta, overrides.custom),
     })
+  },
+
+  updateSceneMeta: (theme, updates) => {
+    const overrides = loadOverrides()
+    
+    // 更新场景元数据
+    overrides.meta[theme] = {
+      ...overrides.meta[theme],
+      id: theme,
+      name: updates.name || overrides.meta[theme]?.name || theme,
+      description: updates.description || overrides.meta[theme]?.description || '',
+      icon: updates.icon !== undefined ? updates.icon : (overrides.meta[theme]?.icon || '🎭'),
+      items: updates.items || overrides.meta[theme]?.items,
+    }
+    
+    saveOverrides(overrides)
+    
+    // 更新状态
+    const mergedMeta = mergeSceneMeta(overrides.meta, overrides.custom)
+    set({
+      sceneMeta: mergedMeta,
+      availableScenes: computeAvailableScenes(mergedMeta, overrides.custom),
+    })
+  },
+
+  deleteScene: (theme) => {
+    // 检查是否为内置默认场景（不能删除）
+    if (theme in defaultSceneMeta) {
+      console.warn(`无法删除内置场景: ${theme}`)
+      return false
+    }
+    
+    const overrides = loadOverrides()
+    
+    // 检查场景是否存在
+    const hasCustomData = theme in overrides.custom
+    const hasMeta = theme in overrides.meta
+    
+    if (!hasCustomData && !hasMeta) {
+      console.warn(`场景不存在: ${theme}`)
+      return false
+    }
+    
+    // 删除场景相关数据
+    delete overrides.custom[theme]
+    delete overrides.deleted[theme]
+    delete overrides.meta[theme]
+    
+    // 如果 sceneDataMap 中有该场景（用户自定义的），也删除
+    if (sceneDataMap[theme]) {
+      delete sceneDataMap[theme]
+    }
+    
+    saveOverrides(overrides)
+    
+    // 更新状态
+    const mergedMeta = mergeSceneMeta(overrides.meta, overrides.custom)
+    const newAvailableScenes = computeAvailableScenes(mergedMeta, overrides.custom)
+    
+    // 如果当前在被删除的场景中，切换到默认场景
+    const currentTheme = get().currentTheme
+    if (currentTheme === theme) {
+      set({
+        isTransitioning: true,
+        sceneMeta: mergedMeta,
+        availableScenes: newAvailableScenes,
+      })
+      
+      setTimeout(() => {
+        set({
+          currentTheme: 'museum',
+          scenePoints: initializeScenePoints('museum', overrides),
+          currentPoint: null,
+          selectedPointId: null,
+          messages: [],
+          playerPosition: new Vector3(0, 1.6, 10),
+          isPointerLocked: false,
+        })
+      }, 100)
+      
+      setTimeout(() => {
+        set({ isTransitioning: false })
+      }, 1500)
+    } else {
+      // 只更新元数据
+      set({
+        sceneMeta: mergedMeta,
+        availableScenes: newAvailableScenes,
+      })
+    }
+    
+    return true
   },
   }
 })

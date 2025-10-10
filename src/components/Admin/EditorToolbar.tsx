@@ -1,31 +1,34 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { useAdminStore } from '../../store/useAdminStore'
 import { useStore } from '../../store/useStore'
 import './EditorToolbar.css'
 
 export default function EditorToolbar() {
   const isEditMode = useAdminStore((s) => s.isEditMode)
+  const transformMode = useAdminStore((s) => s.transformMode)
+  const setTransformMode = useAdminStore((s) => s.setTransformMode)
   const selectedPointId = useStore((s) => s.selectedPointId)
   const setSelectedPoint = useStore((s) => s.setSelectedPoint)
   const deleteScenePoint = useStore((s) => s.deleteScenePoint)
-  const currentTheme = useStore((s) => s.currentTheme)
-  
-  const [transformMode, setTransformMode] = useState<'translate' | 'rotate' | 'scale'>('translate')
   
   useEffect(() => {
     if (!isEditMode) return
     
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 如果焦点在输入框或文本域，不处理快捷键
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
       
       switch (e.key.toLowerCase()) {
         case 'g':
+          e.preventDefault()
           setTransformMode('translate')
           break
         case 'r':
+          e.preventDefault()
           setTransformMode('rotate')
           break
-        case 's':
+        case 't': // 改为 T 键，避免与 WASD 的 S 冲突
+          e.preventDefault()
           setTransformMode('scale')
           break
         case 'delete':
@@ -38,6 +41,7 @@ export default function EditorToolbar() {
           }
           break
         case 'escape':
+          e.preventDefault()
           setSelectedPoint(null)
           break
       }
@@ -73,7 +77,7 @@ export default function EditorToolbar() {
           <button
             className={`mode-btn ${transformMode === 'scale' ? 'active' : ''}`}
             onClick={() => setTransformMode('scale')}
-            title="缩放 (S)"
+            title="缩放 (T)"
           >
             <span>⤢</span>
             <span className="mode-label">缩放</span>
@@ -111,7 +115,7 @@ export default function EditorToolbar() {
         <span>💡 快捷键:</span>
         <span>G移动</span>
         <span>R旋转</span>
-        <span>S缩放</span>
+        <span>T缩放</span>
         <span>Del删除</span>
         <span>Esc取消</span>
       </div>
@@ -119,25 +123,8 @@ export default function EditorToolbar() {
   )
 }
 
-// 导出 transformMode 供 SceneEnvironment 使用
+// 导出 transformMode 供 SceneEnvironment 使用（现在从全局状态获取）
 export function useTransformMode() {
-  const [mode, setMode] = useState<'translate' | 'rotate' | 'scale'>('translate')
-  
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      
-      switch (e.key.toLowerCase()) {
-        case 'g': setMode('translate'); break
-        case 'r': setMode('rotate'); break
-        case 's': setMode('scale'); break
-      }
-    }
-    
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [])
-  
-  return mode
+  return useAdminStore((s) => s.transformMode)
 }
 

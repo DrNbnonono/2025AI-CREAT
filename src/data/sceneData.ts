@@ -12,6 +12,7 @@ export interface ScenePointData {
   category?: string
   rotation?: Vector3
   scale?: number
+  collisionRadius?: number  // 碰撞半径，0表示无碰撞，undefined使用默认计算
 }
 
 export interface SceneMeta {

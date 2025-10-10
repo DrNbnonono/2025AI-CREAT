@@ -17,7 +17,8 @@ export default function ModelManager() {
   const exportConfiguration = useStore((state) => state.exportConfiguration)
   const importConfiguration = useStore((state) => state.importConfiguration)
   const createNewScene = useStore((state) => state.createNewScene)
-  const setCurrentTheme = useStore((state) => state.switchScene)
+  const updateSceneMeta = useStore((state) => state.updateSceneMeta)
+  const deleteScene = useStore((state) => state.deleteScene)
   const setSelectedPoint = useStore((state) => state.setSelectedPoint)
   const currentSceneName = sceneMeta[currentTheme]?.name || currentTheme
   
@@ -25,6 +26,7 @@ export default function ModelManager() {
   const resizeState = useRef<{ startY: number; startHeight: number } | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [showSceneForm, setShowSceneForm] = useState(false)
+  const [showEditSceneForm, setShowEditSceneForm] = useState(false)
   const [panelHeight, setPanelHeight] = useState(() => {
     if (typeof window === 'undefined') return 380
     const stored = Number.parseInt(localStorage.getItem('model-manager-height') || '', 10)
@@ -49,6 +51,11 @@ export default function ModelManager() {
     prompt: '',
     icon: '',
   })
+  const [editSceneForm, setEditSceneForm] = useState({
+    name: '',
+    description: '',
+    icon: '',
+  })
   const [modelOptions, setModelOptions] = useState<string[]>([])
   const [uploadProgress, setUploadProgress] = useState<string | null>(null)
   const importInputRef = useRef<HTMLInputElement | null>(null)
@@ -63,7 +70,7 @@ export default function ModelManager() {
 
   useEffect(() => {
     refreshModelList()
-  }, [])
+  }, [refreshModelList])
 
 
   useEffect(() => {
@@ -82,16 +89,30 @@ export default function ModelManager() {
     setPanelHeight(nextHeight)
   }, [])
 
-const handleResizeEnd = useCallback(() => {
+  const handleResizeEnd = useCallback(() => {
     if (!resizeState.current) return
     resizeState.current = null
     document.removeEventListener('mousemove', handleResizeMove)
     document.removeEventListener('mouseup', handleResizeEnd)
-    document.body.style.cursor = ''
-    document.body.style.userSelect = ''
+    // 强制重置所有可能的鼠标样式
+    document.body.style.cssText = ''
+    document.body.style.cursor = 'default'
+    document.body.style.userSelect = 'auto'
     localStorage.setItem('model-manager-height', String(panelRef.current?.offsetHeight ?? panelHeight))
     setTimeout(() => setIsUiInteracting(false), 0)
   }, [handleResizeMove, panelHeight, setIsUiInteracting])
+
+  // 清理拖拽状态的辅助函数（必须在 handleResizeMove 和 handleResizeEnd 之后定义）
+  const cleanupResizeState = useCallback(() => {
+    if (resizeState.current) {
+      resizeState.current = null
+      document.removeEventListener('mousemove', handleResizeMove)
+      document.removeEventListener('mouseup', handleResizeEnd)
+      document.body.style.cursor = 'default'
+      document.body.style.userSelect = 'auto'
+      setIsUiInteracting(false)
+    }
+  }, [handleResizeMove, handleResizeEnd, setIsUiInteracting])
 
   const handleResizeStart = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
     event.stopPropagation()
@@ -112,6 +133,9 @@ const handleResizeEnd = useCallback(() => {
     return () => {
       document.removeEventListener('mousemove', handleResizeMove)
       document.removeEventListener('mouseup', handleResizeEnd)
+      // 清理时确保重置鼠标样式
+      document.body.style.cursor = 'default'
+      document.body.style.userSelect = 'auto'
     }
   }, [handleResizeEnd, handleResizeMove])
   
@@ -177,15 +201,22 @@ const handleResizeEnd = useCallback(() => {
       alert('该场景标识已存在，请使用新的标识')
       return
     }
+    
+    // createNewScene 已经会自动切换到新场景并更新所有状态
     createNewScene(themeId, {
       name,
       description,
       defaultPrompt: prompt,
-      icon,
+      icon: icon || '🎭',
     })
-    setCurrentTheme(themeId)
+    
     setShowSceneForm(false)
     setSceneForm({ themeId: '' as SceneThemeType, name: '', description: '', prompt: '', icon: '' })
+    
+    // 给用户反馈
+    setTimeout(() => {
+      alert(`场景"${name}"创建成功！\n场景ID: ${themeId}\n\n现在可以开始添加模型点位了。`)
+    }, 300)
   }
 
   const handleFileUpload = async (file: File) => {
@@ -225,6 +256,66 @@ const handleResizeEnd = useCallback(() => {
       alert('上传失败，请确保后端上传API已配置')
     }
   }
+
+  const handleEditScene = () => {
+    setEditSceneForm({
+      name: sceneMeta[currentTheme]?.name || '',
+      description: sceneMeta[currentTheme]?.description || '',
+      icon: sceneMeta[currentTheme]?.icon || '',
+    })
+    setShowEditSceneForm(true)
+  }
+
+  const handleSaveSceneMeta = () => {
+    const name = editSceneForm.name.trim()
+    const description = editSceneForm.description.trim()
+    const icon = editSceneForm.icon.trim()
+
+    if (!name) {
+      alert('请填写场景名称')
+      return
+    }
+
+    updateSceneMeta(currentTheme, {
+      name,
+      description,
+      icon: icon || '🎭',
+    })
+    
+    setShowEditSceneForm(false)
+    alert('场景信息已更新')
+  }
+
+  const handleDeleteScene = () => {
+    // 检查是否为默认场景
+    const defaultScenes = ['museum', 'redMansion', 'silkRoad']
+    if (defaultScenes.includes(currentTheme)) {
+      alert('⚠️ 无法删除内置场景\n\n内置场景（博物馆、红楼梦、丝绸之路）是系统预设的，不能删除。')
+      return
+    }
+
+    // 确认删除
+    const sceneName = sceneMeta[currentTheme]?.name || currentTheme
+    const confirmed = window.confirm(
+      `⚠️ 确定要删除场景"${sceneName}"吗？\n\n删除后将无法恢复：\n` +
+      `• 该场景的所有点位数据\n` +
+      `• 场景配置信息\n` +
+      `• 相关的模型引用\n\n` +
+      `删除后将自动切换到博物馆场景。`
+    )
+
+    if (!confirmed) return
+
+    const success = deleteScene(currentTheme)
+    if (success) {
+      alert(`✅ 场景"${sceneName}"已成功删除`)
+    } else {
+      alert('❌ 删除失败，请稍后重试')
+    }
+  }
+
+  // 检查当前场景是否为默认场景
+  const isDefaultScene = ['museum', 'redMansion', 'silkRoad'].includes(currentTheme)
   
   return (
     <div
@@ -239,13 +330,23 @@ const handleResizeEnd = useCallback(() => {
       </div>
 
       <div className="manager-actions">
-        <button className="action-btn" onClick={() => setShowAddForm(true)}>➕ 添加点位</button>
+        <button className="action-btn" onClick={() => { cleanupResizeState(); setShowAddForm(true); }}>➕ 添加点位</button>
         <button className="action-btn" onClick={() => uploadInputRef.current?.click()} disabled={!!uploadProgress}>
           📁 {uploadProgress || '上传模型'}
         </button>
+        <button className="action-btn" onClick={() => { cleanupResizeState(); handleEditScene(); }}>✏️ 编辑场景</button>
+        {!isDefaultScene && (
+          <button 
+            className="action-btn action-btn-danger" 
+            onClick={() => { cleanupResizeState(); handleDeleteScene(); }}
+            title="删除当前自定义场景"
+          >
+            🗑️ 删除场景
+          </button>
+        )}
         <button className="action-btn" onClick={handleExport}>📤 导出配置</button>
         <button className="action-btn" onClick={() => document.getElementById('scene-import-input')?.click()}>📥 导入配置</button>
-        <button className="action-btn" onClick={() => setShowSceneForm(true)}>🆕 新建场景</button>
+        <button className="action-btn" onClick={() => { cleanupResizeState(); setShowSceneForm(true); }}>🆕 新建场景</button>
         <input
           id="scene-import-input"
           type="file"
@@ -446,6 +547,54 @@ const handleResizeEnd = useCallback(() => {
             <div className="form-buttons">
               <button className="btn-save" onClick={handleCreateScene}>创建场景</button>
               <button className="btn-cancel" onClick={() => setShowSceneForm(false)}>取消</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditSceneForm && (
+        <div className="add-form-overlay" onClick={() => setShowEditSceneForm(false)}>
+          <div className="add-form" onClick={(e) => e.stopPropagation()}>
+            <h3>编辑场景信息</h3>
+            <div className="form-field">
+              <label>场景标识</label>
+              <input
+                value={currentTheme}
+                disabled
+                style={{ opacity: 0.6, cursor: 'not-allowed' }}
+              />
+              <small style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                场景标识不可修改
+              </small>
+            </div>
+            <div className="form-field">
+              <label>场景名称</label>
+              <input
+                value={editSceneForm.name}
+                onChange={(e) => setEditSceneForm({ ...editSceneForm, name: e.target.value })}
+                placeholder="例如：清明上河图场景"
+              />
+            </div>
+            <div className="form-field">
+              <label>场景描述</label>
+              <textarea
+                value={editSceneForm.description}
+                onChange={(e) => setEditSceneForm({ ...editSceneForm, description: e.target.value })}
+                rows={4}
+                placeholder="一句话描述"
+              />
+            </div>
+            <div className="form-field">
+              <label>场景图标（emoji）</label>
+              <input
+                value={editSceneForm.icon}
+                onChange={(e) => setEditSceneForm({ ...editSceneForm, icon: e.target.value })}
+                placeholder="例如：🎨"
+              />
+            </div>
+            <div className="form-buttons">
+              <button className="btn-save" onClick={handleSaveSceneMeta}>保存</button>
+              <button className="btn-cancel" onClick={() => setShowEditSceneForm(false)}>取消</button>
             </div>
           </div>
         </div>
