@@ -44,3 +44,7 @@ public/models/**/textures/**
 public/models/**/*.png
 public/models/**/*.jpg
 public/models/**/*.jpeg
+
+# Markdown files (keep only root README.md)
+*.md
+!README.md
