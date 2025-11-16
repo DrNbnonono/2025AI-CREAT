@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Box, Sphere, Cylinder, TransformControls, Html } from '@react-three/drei'
+import { Box, Sphere, Cylinder, TransformControls, Html, useGLTF } from '@react-three/drei'
 import { useStore } from '../store/useStore'
 import { useAdminStore } from '../store/useAdminStore'
 import { useTransformMode } from './Admin/EditorToolbar'
@@ -100,11 +100,27 @@ export default function SceneEnvironment() {
   }
   
   const groundConfig = calculateGroundSize()
-  
+
   // 更新碰撞边界到 store
   useEffect(() => {
     setGroundBounds(groundConfig.bounds)
   }, [scenePoints, setGroundBounds])
+
+  // 预加载当前场景中的 GLTF/GLB 模型，降低首次进入延迟
+  useEffect(() => {
+    scenePoints.forEach((p) => {
+      const url = p.modelPath
+      if (!url) return
+      const lower = url.toLowerCase()
+      if (lower.endsWith('.glb') || lower.endsWith('.gltf')) {
+        try {
+          // drei 提供的预加载接口
+          // @ts-ignore
+          useGLTF.preload(url)
+        } catch {}
+      }
+    })
+  }, [scenePoints])
   
   return (
     <group>

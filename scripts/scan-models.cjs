@@ -31,6 +31,6 @@ if (!fs.existsSync(MODELS_DIR)) {
 
 const list = walk(MODELS_DIR)
 fs.writeFileSync(OUTPUT, JSON.stringify({ updatedAt: new Date().toISOString(), files: list }, null, 2))
-console.log(`Scanned ${list.length} file(s). Wrote ${OUTPUT}`)
+// 静默模式：不输出日志
 
 

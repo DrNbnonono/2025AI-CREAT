@@ -84,9 +84,23 @@ export default function ModelPlacementHelper() {
       
       // 在点击位置生成模型
       const id = `obj-${Date.now()}`
+      
+      // 从模型路径生成友好的默认名称
+      const getModelDisplayName = (path: string): string => {
+        const filename = path.split('/').slice(-1)[0] || '模型'
+        // 移除文件扩展名
+        const nameWithoutExt = filename.replace(/\.(glb|gltf|fbx|obj|dae|skp)$/i, '')
+        // 将下划线和连字符替换为空格，并处理驼峰命名
+        const friendlyName = nameWithoutExt
+          .replace(/[_-]/g, ' ')
+          .replace(/([a-z])([A-Z])/g, '$1 $2') // 驼峰转空格
+          .trim()
+        return friendlyName || '模型'
+      }
+      
       addScenePoint({
         id,
-        name: placingModelPath.split('/').slice(-1)[0] || '模型',
+        name: getModelDisplayName(placingModelPath),
         position: previewPos.clone(),
         radius: 2.5,
         description: '自定义模型',

@@ -48,3 +48,7 @@ public/models/**/*.jpeg
 # Markdown files (keep only root README.md)
 *.md
 !README.md
+
+决赛/
+.trae/
+.CLAUDE.md

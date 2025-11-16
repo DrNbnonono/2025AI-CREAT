@@ -17,6 +17,23 @@ export default function Experience() {
   const isEditMode = useAdminStore((state) => state.isEditMode)
   
   const controlsRef = useRef<any>(null)
+  const spatialIndexRef = useRef<Map<string, any[]>>(new Map())
+  const cellSizeRef = useRef<number>(8)
+
+  const cellKey = (x: number, z: number) => `${Math.floor(x / cellSizeRef.current)}:${Math.floor(z / cellSizeRef.current)}`
+
+  useEffect(() => {
+    const index = new Map<string, any[]>()
+    const size = Math.max(6, ...scenePoints.map((p) => Math.max(3, p.radius)))
+    cellSizeRef.current = Math.max(6, Math.min(12, size))
+    for (const p of scenePoints) {
+      const key = cellKey(p.position.x, p.position.z)
+      const list = index.get(key) || []
+      list.push(p)
+      index.set(key, list)
+    }
+    spatialIndexRef.current = index
+  }, [scenePoints])
   
   // 每帧更新玩家位置并检测触发器
   useFrame(() => {
@@ -28,9 +45,19 @@ export default function Experience() {
         camera.position.z
       )
       
-      // 检测是否在任何场景点附近
+      // 空间索引附近检测
       let inTriggerZone = false
-      for (const point of scenePoints) {
+      const baseKey = cellKey(newPosition.x, newPosition.z)
+      const [cx, cz] = baseKey.split(':').map((v) => parseInt(v, 10))
+      const candidates: any[] = []
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dz = -1; dz <= 1; dz++) {
+          const key = `${cx + dx}:${cz + dz}`
+          const list = spatialIndexRef.current.get(key)
+          if (list) candidates.push(...list)
+        }
+      }
+      for (const point of candidates.length ? candidates : scenePoints) {
         const distance = newPosition.distanceTo(point.position)
         if (distance <= point.radius) {
           inTriggerZone = true

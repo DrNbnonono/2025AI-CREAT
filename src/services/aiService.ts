@@ -33,16 +33,18 @@ export async function getAIResponse(
   
   // 如果没有配置API Key且不是 Ollama 或 openai provider（LM Studio使用openai provider但不需要真实key），返回模拟回复
   if (!finalConfig.apiKey && finalConfig.provider !== 'ollama' && finalConfig.provider !== 'openai') {
-    console.warn('未配置AI API Key，使用模拟回复')
+    if (import.meta.env.DEV) console.warn('未配置AI API Key，使用模拟回复')
     return getMockResponse(messages[messages.length - 1]?.content || '')
   }
   
-  console.log('🤖 调用 AI API:', {
-    provider: finalConfig.provider,
-    model: finalConfig.model,
-    baseURL: finalConfig.baseURL,
-    hasApiKey: !!finalConfig.apiKey
-  })
+  if (import.meta.env.DEV) {
+    console.log('🤖 调用 AI API:', {
+      provider: finalConfig.provider,
+      model: finalConfig.model,
+      baseURL: finalConfig.baseURL,
+      hasApiKey: !!finalConfig.apiKey
+    })
+  }
   
   try {
     // 构建请求头
@@ -79,18 +81,18 @@ export async function getAIResponse(
       if (thinkMatch) {
         // 提取思考内容（可选：可以用于调试）
         const thinkContent = thinkMatch[0].replace(/<\/?think>/g, '').trim()
-        console.log('🤔 AI 思考过程:', thinkContent.substring(0, 100) + '...')
+        if (import.meta.env.DEV) console.log('🤔 AI 思考过程:', thinkContent.substring(0, 100) + '...')
         
         // 移除 <think> 标签及其内容
         reply = reply.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
       }
     }
     
-    console.log('✅ AI 回复成功，长度:', reply.length)
+    if (import.meta.env.DEV) console.log('✅ AI 回复成功，长度:', reply.length)
     return reply
   } catch (error: any) {
     console.error('❌ AI API 调用失败:', error)
-    console.error('错误详情:', error.response?.data || error.message)
+    if (import.meta.env.DEV) console.error('错误详情:', error.response?.data || error.message)
     
     if (error.response?.status === 401) {
       return '抱歉，API认证失败，请检查您的API Key配置。'

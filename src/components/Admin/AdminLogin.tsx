@@ -53,7 +53,7 @@ export default function AdminLogin({ onClose }: AdminLoginProps) {
         </form>
         
         <div className="login-hint">
-          💡 提示：默认密码为 <code>admin2025</code>
+          💡 提示：默认密码为 <code>{import.meta.env.VITE_ADMIN_PASSWORD || 'admin2025'}</code>
         </div>
       </div>
     </div>

@@ -25,7 +25,7 @@ interface AdminState {
 }
 
 // 简单的密码验证（实际项目中应该用更安全的方式）
-const ADMIN_PASSWORD = 'admin2025'
+const ADMIN_PASSWORD = (import.meta.env.VITE_ADMIN_PASSWORD as string) || 'admin2025'
 
 export const useAdminStore = create<AdminState>()(
   persist(

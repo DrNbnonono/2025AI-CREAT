@@ -66,13 +66,17 @@ export default function PropertyPanel() {
 
       <div className="panel-content">
         <div className="property-group">
-          <label>名称</label>
+          <label>
+            名称
+            <span className="hint-text"> - 游客视角可见</span>
+          </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             onBlur={handleUpdate}
             aria-label="名称"
+            placeholder="模型显示名称"
           />
         </div>
 

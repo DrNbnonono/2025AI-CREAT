@@ -28,7 +28,7 @@ function writeIndex() {
   if (!fs.existsSync(MODELS_DIR)) return
   const list = walk(MODELS_DIR)
   fs.writeFileSync(OUTPUT, JSON.stringify({ updatedAt: new Date().toISOString(), files: list }, null, 2))
-  console.log(`[models] indexed ${list.length} file(s) → ${path.relative(ROOT, OUTPUT)}`)
+  // 静默模式：不输出日志
 }
 
 // initial build
@@ -44,9 +44,9 @@ function schedule() {
 // watch recursively (supported on Windows/macOS)
 try {
   fs.watch(MODELS_DIR, { recursive: true }, () => schedule())
-  console.log('[models] watching', path.relative(ROOT, MODELS_DIR))
+  // 静默模式：不输出日志
 } catch (e) {
-  console.log('[models] fallback watch (non-recursive)')
+  // 静默模式：不输出日志
   fs.watch(MODELS_DIR, () => schedule())
 }
 

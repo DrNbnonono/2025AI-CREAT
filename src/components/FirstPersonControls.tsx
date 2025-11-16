@@ -12,6 +12,7 @@ const FirstPersonControls = forwardRef((_props, ref) => {
   const setPointerLocked = useStore((state) => state.setPointerLocked)
   const setShowInstructions = useStore((state) => state.setShowInstructions)
   const scenePoints = useStore((state) => state.scenePoints)
+  const groundBounds = useStore((state) => state.groundBounds)
   
   // 移动状态
   const moveState = useRef({
@@ -122,7 +123,7 @@ const FirstPersonControls = forwardRef((_props, ref) => {
   // 监听玩家位置变化（用于场景切换时的位置重置）
   useEffect(() => {
     if (camera && playerPosition && controlsRef.current) {
-      console.log('🔄 重置玩家位置:', playerPosition)
+      
       const newPosition = playerPosition.clone()
       camera.position.copy(newPosition)
       velocity.current.set(0, 0, 0) // 重置速度
@@ -204,6 +205,18 @@ const FirstPersonControls = forwardRef((_props, ref) => {
     
     // 获取新位置
     const newPos = controls.getObject().position.clone()
+
+    // 边界约束（来自动态地面计算）
+    if (groundBounds) {
+      const clamped = new Vector3(
+        Math.min(Math.max(newPos.x, groundBounds.minX), groundBounds.maxX),
+        newPos.y,
+        Math.min(Math.max(newPos.z, groundBounds.minZ), groundBounds.maxZ)
+      )
+      newPos.copy(clamped)
+      controls.getObject().position.copy(clamped)
+      camera.position.copy(clamped)
+    }
     
     // 检查碰撞
     if (checkCollision(newPos)) {
@@ -222,10 +235,10 @@ const FirstPersonControls = forwardRef((_props, ref) => {
       ms.canJump = true
     }
     
-    // 更新商店中的玩家位置（每 150ms 更新一次以避免过于频繁）
+    // 更新商店中的玩家位置（节流以避免过于频繁）
     if (!state.clock.running) return
     const currentTime = state.clock.elapsedTime * 1000
-    if (currentTime - lastUpdate.current > 150) {
+    if (currentTime - lastUpdate.current > 120) {
       const currentPos = controls.getObject().position.clone()
       setPlayerPosition(currentPos)
       lastUpdate.current = currentTime
@@ -238,4 +251,3 @@ const FirstPersonControls = forwardRef((_props, ref) => {
 FirstPersonControls.displayName = 'FirstPersonControls'
 
 export default FirstPersonControls
-
