@@ -1,3 +1,5 @@
+// 场景选择器组件
+// 用于切换不同的场景主题
 import { useStore } from '../../store/useStore'
 import type { SceneThemeType } from '../../store/useStore'
 import './SceneSelector.css'

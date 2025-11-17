@@ -1,3 +1,6 @@
+// 通用模型加载器组件
+// 用于加载不同格式的3D模型（.glb, .gltf, .fbx, .obj, .dae）
+// 支持模型高亮显示和加载状态管理
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useGLTF, Html } from '@react-three/drei'
 import * as THREE from 'three'

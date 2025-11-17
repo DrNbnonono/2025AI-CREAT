@@ -1,3 +1,5 @@
+// 管理员商店状态管理
+// 用于存储管理员相关的状态，如用户角色、登录状态、编辑模式等
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 

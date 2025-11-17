@@ -1,3 +1,4 @@
+// 编辑器模式控制器（管理员专用）
 import { useEffect, useRef } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'

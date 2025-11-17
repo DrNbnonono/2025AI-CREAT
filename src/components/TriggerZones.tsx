@@ -1,3 +1,5 @@
+// 触发区域组件
+// 用于在场景中定义可交互的触发区域
 import { useStore } from '../store/useStore'
 import { useAdminStore } from '../store/useAdminStore'
 import { Sphere, Html } from '@react-three/drei'

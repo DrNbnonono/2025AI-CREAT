@@ -1,3 +1,5 @@
+// 场景环境组件
+// 包含场景中的所有静态元素，如地面、环境光、模型等
 import { useRef, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Box, Sphere, Cylinder, TransformControls, Html, useGLTF } from '@react-three/drei'

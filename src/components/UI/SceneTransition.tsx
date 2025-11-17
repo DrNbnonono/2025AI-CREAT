@@ -1,3 +1,5 @@
+// 场景过渡组件
+// 用于在场景切换时显示过渡动画
 import { useEffect, useState } from 'react'
 import './SceneTransition.css'
 

@@ -1,3 +1,5 @@
+// 场景状态管理存储
+// 用于存储场景中的点数据、用户位置、旋转、缩放等状态
 import { create } from 'zustand'
 import { Vector3 } from 'three'
 import { sceneDataMap, defaultSceneMeta, type ScenePointData, type SceneMeta } from '../data/sceneData'

@@ -1,3 +1,5 @@
+// 第一人称控制器组件
+// 用于处理用户在场景中的移动和交互
 import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js'

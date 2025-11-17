@@ -1,9 +1,12 @@
 import { useEffect } from 'react'
+import { useState } from 'react'
 import { useAdminStore } from '../../store/useAdminStore'
 import { useStore } from '../../store/useStore'
+import LLMConfigPanel from './LLMConfigPanel'
 import './EditorToolbar.css'
 
 export default function EditorToolbar() {
+  const [showLLMConfig, setShowLLMConfig] = useState(false)
   const isEditMode = useAdminStore((s) => s.isEditMode)
   const transformMode = useAdminStore((s) => s.transformMode)
   const setTransformMode = useAdminStore((s) => s.setTransformMode)
@@ -111,6 +114,19 @@ export default function EditorToolbar() {
         </div>
       )}
       
+      <div className="toolbar-section">
+        <span className="toolbar-label">AI配置</span>
+        <div className="toolbar-actions">
+          <button
+            className="action-btn"
+            onClick={() => setShowLLMConfig(true)}
+            title="LLM配置"
+          >
+            🤖 LLM设置
+          </button>
+        </div>
+      </div>
+
       <div className="toolbar-hints">
         <span>💡 快捷键:</span>
         <span>G移动</span>
@@ -119,6 +135,8 @@ export default function EditorToolbar() {
         <span>Del删除</span>
         <span>Esc取消</span>
       </div>
+      
+      {showLLMConfig && <LLMConfigPanel onClose={() => setShowLLMConfig(false)} />}
     </div>
   )
 }

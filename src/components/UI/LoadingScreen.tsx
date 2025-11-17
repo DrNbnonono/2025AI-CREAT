@@ -1,3 +1,4 @@
+// 加载屏幕组件
 import './LoadingScreen.css'
 
 export default function LoadingScreen() {

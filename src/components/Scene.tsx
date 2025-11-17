@@ -1,3 +1,5 @@
+// 场景组件
+// 包含场景环境、用户控制、模型放置助手等功能
 import { Canvas } from '@react-three/fiber'
 import { Sky, Stats } from '@react-three/drei'
 import Experience from './Experience'

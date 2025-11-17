@@ -1,0 +1,134 @@
+.tts-controls {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.tts-panel {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  color: white;
+  min-width: 250px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tts-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tts-icon {
+  font-size: 20px;
+}
+
+.tts-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.tts-options {
+  margin-bottom: 12px;
+}
+
+.tts-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.tts-option input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #4CAF50;
+}
+
+.tts-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tts-button {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tts-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.tts-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.tts-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tts-button.secondary {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tts-button.speaking {
+  background: #ff4757;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.tts-current {
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 12px;
+}
+
+.tts-current-label {
+  opacity: 0.8;
+  margin-right: 6px;
+}
+
+.tts-current-name {
+  font-weight: 600;
+  color: #FFD700;
+}

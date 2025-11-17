@@ -1,3 +1,5 @@
+// 模型放置辅助工具组件
+// 用于在场景中辅助用户放置模型
 import { useEffect, useRef, useState } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import { Raycaster, Vector2, Vector3, Mesh, PlaneGeometry, MeshBasicMaterial } from 'three'

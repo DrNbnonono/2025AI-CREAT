@@ -1,3 +1,5 @@
+// 场景体验组件
+// 包含场景环境、用户控制、模型放置助手等功能
 import { useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Vector3 } from 'three'

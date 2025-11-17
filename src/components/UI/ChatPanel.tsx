@@ -1,3 +1,5 @@
+// 聊天面板组件
+
 import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../../store/useStore'
 import { getAIResponse, buildSystemPrompt } from '../../services/aiService'

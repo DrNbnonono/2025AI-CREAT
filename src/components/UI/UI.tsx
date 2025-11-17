@@ -10,6 +10,9 @@ import ModelManager from '../Admin/ModelManager'
 import ModelLibraryPanel from '../Admin/ModelLibraryPanel'
 import EditorToolbar from '../Admin/EditorToolbar'
 import PropertyPanel from '../Admin/PropertyPanel'
+import TTSControls from './TTSControls'
+import AudioControls from './AudioControls'
+import TimeOfDayControl from './TimeOfDayControl'
 import './UI.css'
 
 export default function UI() {
@@ -59,6 +62,12 @@ export default function UI() {
       {showChat && <ChatPanel />}
       
       {/* 控制按钮 */}
+      {/* 语音朗诵控制 */}
+      {/* 音频控制 */}
+      {/* 昼夜切换控制 */}
+      <TimeOfDayControl />
+      <AudioControls />
+      <TTSControls />
       <Controls />
       
       {/* 管理员工具 */}

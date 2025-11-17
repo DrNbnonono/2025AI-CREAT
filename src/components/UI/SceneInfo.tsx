@@ -1,3 +1,4 @@
+// 场景信息组件
 import { useStore } from '../../store/useStore'
 import './SceneInfo.css'
 
