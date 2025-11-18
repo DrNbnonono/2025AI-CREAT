@@ -10,43 +10,58 @@ import UniversalModelLoader from './UniversalModelLoader'
 import { timeOfDayService, TimeOfDay } from '../services/timeOfDayService'
 import * as THREE from 'three'
 
-// 创建程序化石砖纹理
-function createBrickTexture() {
-  const canvas = document.createElement('canvas')
-  canvas.width = 512
-  canvas.height = 512
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return new THREE.Texture()
+// 创建程序化石砖纹理（使用缓存优化性能）
+const createBrickTexture = (() => {
+  let cachedTexture: THREE.Texture | null = null
+  let cacheKey = ''
 
-  // 底色
-  ctx.fillStyle = '#6B5D52'
-  ctx.fillRect(0, 0, 512, 512)
-
-  // 绘制石砖
-  const brickWidth = 128
-  const brickHeight = 64
-  const mortarSize = 4
-
-  ctx.strokeStyle = '#4A4035'
-  ctx.lineWidth = mortarSize
-
-  for (let y = 0; y < 512; y += brickHeight) {
-    for (let x = 0; x < 512; x += brickWidth) {
-      const offsetX = (y / brickHeight) % 2 === 0 ? 0 : brickWidth / 2
-      ctx.strokeRect(x + offsetX, y, brickWidth, brickHeight)
-
-      // 添加纹理细节
-      ctx.fillStyle = `rgba(${100 + Math.random() * 30}, ${80 + Math.random() * 20}, ${70 + Math.random() * 20}, 0.3)`
-      ctx.fillRect(x + offsetX + mortarSize, y + mortarSize, brickWidth - mortarSize * 2, brickHeight - mortarSize * 2)
+  return function createBrickTexture() {
+    // 检查缓存是否有效（首次渲染或SSR环境下）
+    if (typeof window === 'undefined') {
+      return new THREE.Texture()
     }
-  }
 
-  const texture = new THREE.CanvasTexture(canvas)
-  texture.wrapS = THREE.RepeatWrapping
-  texture.wrapT = THREE.RepeatWrapping
-  texture.repeat.set(4, 4)
-  return texture
-}
+    // 如果已经创建过纹理，直接返回缓存
+    if (cachedTexture) {
+      return cachedTexture
+    }
+
+    const canvas = document.createElement('canvas')
+    canvas.width = 512
+    canvas.height = 512
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return new THREE.Texture()
+
+    // 底色
+    ctx.fillStyle = '#6B5D52'
+    ctx.fillRect(0, 0, 512, 512)
+
+    // 绘制石砖
+    const brickWidth = 128
+    const brickHeight = 64
+    const mortarSize = 4
+
+    ctx.strokeStyle = '#4A4035'
+    ctx.lineWidth = mortarSize
+
+    for (let y = 0; y < 512; y += brickHeight) {
+      for (let x = 0; x < 512; x += brickWidth) {
+        const offsetX = (y / brickHeight) % 2 === 0 ? 0 : brickWidth / 2
+        ctx.strokeRect(x + offsetX, y, brickWidth, brickHeight)
+
+        // 添加纹理细节
+        ctx.fillStyle = `rgba(${100 + Math.random() * 30}, ${80 + Math.random() * 20}, ${70 + Math.random() * 20}, 0.3)`
+        ctx.fillRect(x + offsetX + mortarSize, y + mortarSize, brickWidth - mortarSize * 2, brickHeight - mortarSize * 2)
+      }
+    }
+
+    cachedTexture = new THREE.CanvasTexture(canvas)
+    cachedTexture.wrapS = THREE.RepeatWrapping
+    cachedTexture.wrapT = THREE.RepeatWrapping
+    cachedTexture.repeat.set(4, 4)
+    return cachedTexture
+  }
+})()
 
 export default function SceneEnvironment() {
   const scenePoints = useStore((state) => state.scenePoints)

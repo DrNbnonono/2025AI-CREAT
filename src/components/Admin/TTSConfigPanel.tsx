@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { TTSConfig } from '../../services/ttsService'
+import { TTSConfig, getAvailableVoices } from '../../services/ttsService'
 import './TTSConfigPanel.css'
 
 interface TTSProvider {
@@ -19,7 +19,7 @@ const providers: TTSProvider[] = [
     description: 'Web Speech API - 免费使用，无需配置',
     isFree: true,
     requiresApiKey: false,
-    voices: ['默认语音'],
+    voices: undefined, // 动态加载
   },
   {
     id: 'ollama',
@@ -82,6 +82,8 @@ export default function TTSConfigPanel({ onClose }: { onClose: () => void }) {
     volume: 1.0,
   })
   const [showApiKey, setShowApiKey] = useState(false)
+  const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [isLoadingVoices, setIsLoadingVoices] = useState(false)
 
   useEffect(() => {
     // 从localStorage读取TTS配置
@@ -90,6 +92,40 @@ export default function TTSConfigPanel({ onClose }: { onClose: () => void }) {
       setConfig(JSON.parse(savedConfig))
     }
   }, [])
+
+  const handleLoadBrowserVoices = async () => {
+    setIsLoadingVoices(true)
+    try {
+      // 等待语音列表加载
+      const loadVoices = () => {
+        const voices = getAvailableVoices()
+        setBrowserVoices(voices)
+        if (voices.length > 0 && !config.voice) {
+          // 如果没有选择语音，默认选择第一个中文语音或第一个可用语音
+          const chineseVoice = voices.find(v => v.lang.includes('zh'))
+          setConfig(prev => ({
+            ...prev,
+            voice: chineseVoice?.name || voices[0].name
+          }))
+        }
+      }
+
+      // 尝试立即获取
+      loadVoices()
+
+      // 如果语音列表为空，等待voiceschanged事件
+      if (browserVoices.length === 0) {
+        if ('speechSynthesis' in window) {
+          speechSynthesis.onvoiceschanged = loadVoices
+        }
+      }
+    } catch (error) {
+      console.error('获取语音列表失败:', error)
+      alert('获取浏览器语音列表失败，请检查浏览器支持')
+    } finally {
+      setIsLoadingVoices(false)
+    }
+  }
 
   const handleProviderChange = (providerId: string) => {
     const provider = providers.find(p => p.id === providerId)
@@ -177,27 +213,79 @@ export default function TTSConfigPanel({ onClose }: { onClose: () => void }) {
 
           {/* 语音选择 */}
           <div className="config-section">
-            <label className="config-label">语音</label>
-            <select
-              className="config-select"
-              value={config.voice || ''}
-              onChange={(e) => setConfig({ ...config, voice: e.target.value })}
-            >
-              {selectedProvider?.voices?.map(voice => (
-                <option key={voice} value={voice}>{voice}</option>
-              ))}
-              {!selectedProvider?.voices && (
-                <option value="">默认</option>
+            <label className="config-label">
+              语音
+              {selectedProvider?.id === 'browser' && (
+                <button
+                  className="load-voices-button"
+                  onClick={handleLoadBrowserVoices}
+                  disabled={isLoadingVoices}
+                  style={{ marginLeft: '10px', fontSize: '12px', padding: '4px 8px' }}
+                >
+                  {isLoadingVoices ? '加载中...' : '🔄 获取浏览器语音'}
+                </button>
               )}
-            </select>
-            <input
-              type="text"
-              className="config-input"
-              style={{ marginTop: '8px' }}
-              value={config.voice || ''}
-              onChange={(e) => setConfig({ ...config, voice: e.target.value })}
-              placeholder="或输入自定义语音名称"
-            />
+            </label>
+
+            {/* 浏览器语音提供商 */}
+            {selectedProvider?.id === 'browser' ? (
+              <>
+                {browserVoices.length > 0 ? (
+                  <select
+                    className="config-select"
+                    value={config.voice || ''}
+                    onChange={(e) => setConfig({ ...config, voice: e.target.value })}
+                  >
+                    {browserVoices.map(voice => (
+                      <option key={voice.name} value={voice.name}>
+                        {voice.name} ({voice.lang}) {voice.default ? '✓' : ''}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="voices-not-loaded">
+                    <p style={{ color: '#999', fontSize: '13px', margin: '8px 0' }}>
+                      💡 点击"获取浏览器语音"按钮加载可用语音列表
+                    </p>
+                  </div>
+                )}
+
+                {browserVoices.length > 0 && (
+                  <input
+                    type="text"
+                    className="config-input"
+                    style={{ marginTop: '8px' }}
+                    value={config.voice || ''}
+                    onChange={(e) => setConfig({ ...config, voice: e.target.value })}
+                    placeholder="或手动输入自定义语音名称"
+                  />
+                )}
+              </>
+            ) : (
+              /* 其他提供商 */
+              <>
+                <select
+                  className="config-select"
+                  value={config.voice || ''}
+                  onChange={(e) => setConfig({ ...config, voice: e.target.value })}
+                >
+                  {selectedProvider?.voices?.map(voice => (
+                    <option key={voice} value={voice}>{voice}</option>
+                  ))}
+                  {!selectedProvider?.voices && (
+                    <option value="">默认</option>
+                  )}
+                </select>
+                <input
+                  type="text"
+                  className="config-input"
+                  style={{ marginTop: '8px' }}
+                  value={config.voice || ''}
+                  onChange={(e) => setConfig({ ...config, voice: e.target.value })}
+                  placeholder="或输入自定义语音名称"
+                />
+              </>
+            )}
           </div>
 
           {/* 语音参数 */}

@@ -210,8 +210,18 @@ export function stopSpeaking(): void {
  */
 export function getAvailableVoices(): SpeechSynthesisVoice[] {
   if ('speechSynthesis' in window) {
+    return speechSynthesis.getVoices()
+  }
+  return []
+}
+
+/**
+ * 获取可用语音列表（仅中文和英文）
+ */
+export function getAvailableVoicesZhEn(): SpeechSynthesisVoice[] {
+  if ('speechSynthesis' in window) {
     return speechSynthesis.getVoices().filter(v =>
-      v.lang.includes('zh') || v.lang.includes('en')
+      v.lang.includes('zh') || v.lang.includes('en') || v.lang.includes('cmn')
     )
   }
   return []
