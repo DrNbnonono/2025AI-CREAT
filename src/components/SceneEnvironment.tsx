@@ -1,12 +1,13 @@
 // 场景环境组件
 // 包含场景中的所有静态元素，如地面、环境光、模型等
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Box, Sphere, Cylinder, TransformControls, Html, useGLTF } from '@react-three/drei'
 import { useStore } from '../store/useStore'
 import { useAdminStore } from '../store/useAdminStore'
 import { useTransformMode } from './Admin/EditorToolbar'
 import UniversalModelLoader from './UniversalModelLoader'
+import { timeOfDayService, TimeOfDay } from '../services/timeOfDayService'
 import * as THREE from 'three'
 
 // 创建程序化石砖纹理
@@ -33,7 +34,7 @@ function createBrickTexture() {
     for (let x = 0; x < 512; x += brickWidth) {
       const offsetX = (y / brickHeight) % 2 === 0 ? 0 : brickWidth / 2
       ctx.strokeRect(x + offsetX, y, brickWidth, brickHeight)
-      
+
       // 添加纹理细节
       ctx.fillStyle = `rgba(${100 + Math.random() * 30}, ${80 + Math.random() * 20}, ${70 + Math.random() * 20}, 0.3)`
       ctx.fillRect(x + offsetX + mortarSize, y + mortarSize, brickWidth - mortarSize * 2, brickHeight - mortarSize * 2)
@@ -50,57 +51,56 @@ function createBrickTexture() {
 export default function SceneEnvironment() {
   const scenePoints = useStore((state) => state.scenePoints)
   const setGroundBounds = useStore((state) => state.setGroundBounds)
-  
+
   // 动态计算场地大小
   const calculateGroundSize = () => {
-    if (scenePoints.length === 0) return { 
-      size: 100, 
+    if (scenePoints.length === 0) return {
+      size: 100,
       position: [0, 0] as [number, number],
       bounds: { minX: -50, maxX: 50, minZ: -50, maxZ: 50 }
     }
-    
+
     let minX = Infinity, maxX = -Infinity
     let minZ = Infinity, maxZ = -Infinity
-    
+
     scenePoints.forEach(point => {
       const x = point.position.x
       const z = point.position.z
       const scale = point.scale || 1
       const scaleValue = typeof scale === 'number' ? scale : Math.max(...(scale as number[]))
-      // 使用较大的半径来确保地面足够大
       const radius = Math.max(point.radius || 3, scaleValue * 3)
-      
+
       minX = Math.min(minX, x - radius)
       maxX = Math.max(maxX, x + radius)
       minZ = Math.min(minZ, z - radius)
       maxZ = Math.max(maxZ, z + radius)
     })
-    
+
     // 添加边距
     const padding = 20
     const width = Math.max(100, maxX - minX + padding * 2)
     const depth = Math.max(100, maxZ - minZ + padding * 2)
     const size = Math.max(width, depth)
-    
+
     const centerX = (minX + maxX) / 2
     const centerZ = (minZ + maxZ) / 2
-    
+
     // 计算实际边界（用于碰撞检测）
     const halfSize = size / 2
     const bounds = {
-      minX: centerX - halfSize + 5,  // 留5单位边距
+      minX: centerX - halfSize + 5,
       maxX: centerX + halfSize - 5,
       minZ: centerZ - halfSize + 5,
       maxZ: centerZ + halfSize - 5
     }
-    
-    return { 
-      size: Math.ceil(size / 10) * 10, // 向上取整到10的倍数
+
+    return {
+      size: Math.ceil(size / 10) * 10,
       position: [centerX, centerZ] as [number, number],
       bounds
     }
   }
-  
+
   const groundConfig = calculateGroundSize()
 
   // 更新碰撞边界到 store
@@ -116,14 +116,12 @@ export default function SceneEnvironment() {
       const lower = url.toLowerCase()
       if (lower.endsWith('.glb') || lower.endsWith('.gltf')) {
         try {
-          // drei 提供的预加载接口
-          // @ts-ignore
           useGLTF.preload(url)
         } catch {}
       }
     })
   }, [scenePoints])
-  
+
   return (
     <group>
       {/* 地面 */}
@@ -139,18 +137,18 @@ export default function SceneEnvironment() {
           metalness={0.2}
         />
       </mesh>
-      
+
       {/* 网格辅助线 */}
-      <gridHelper 
-        args={[groundConfig.size, Math.floor(groundConfig.size / 2), '#4a5568', '#2d3748']} 
+      <gridHelper
+        args={[groundConfig.size, Math.floor(groundConfig.size / 2), '#4a5568', '#2d3748']}
         position={[groundConfig.position[0], 0, groundConfig.position[1]]}
       />
-      
+
       {/* 场景点位的文物展示 */}
       {scenePoints.map((point) => (
         <ArtifactDisplay key={point.id} point={point} />
       ))}
-      
+
       {/* 环境装饰 */}
       <EnvironmentDecoration />
     </group>
@@ -163,28 +161,28 @@ function ArtifactDisplay({ point }: { point: any }) {
   const meshRef = useRef<THREE.Group>(null)
   const currentPoint = useStore((state) => state.currentPoint)
   const isActive = currentPoint?.id === point.id
-  
+
   const isEditMode = useAdminStore((s) => s.isEditMode)
   const selectedPointId = useStore((s) => s.selectedPointId)
   const setSelectedPoint = useStore((s) => s.setSelectedPoint)
   const updateScenePoint = useStore((s) => s.updateScenePoint)
   const transformMode = useTransformMode()
-  
+
   const isSelected = selectedPointId === point.id
-  
+
   // 旋转动画（编辑模式下禁用）
   useFrame((_state, delta) => {
     if (!isEditMode && meshRef.current) {
       meshRef.current.rotation.y += delta * 0.3
     }
   })
-  
+
   const handleClick = (e: any) => {
     if (!isEditMode) return
     e.stopPropagation()
     setSelectedPoint(point.id)
   }
-  
+
   const handleTransformChange = () => {
     if (!groupRef.current || !isEditMode || !isSelected) return
     const { position, rotation, scale } = groupRef.current
@@ -200,7 +198,7 @@ function ArtifactDisplay({ point }: { point: any }) {
             : 1,
     })
   }
-  
+
   const groupPosition: [number, number, number] = [point.position.x, point.position.y ?? 0, point.position.z]
   const groupRotation: [number, number, number] = [
     point.rotation?.x ?? 0,
@@ -215,7 +213,7 @@ function ArtifactDisplay({ point }: { point: any }) {
 
   // 计算平台尺寸（根据模型scale调整）
   const scaleValue = typeof groupScale === 'number' ? groupScale : Math.max(...groupScale)
-  const platformSize = Math.max(2, scaleValue * 2.5) // 动态调整平台大小
+  const platformSize = Math.max(2, scaleValue * 2.5)
 
   if (point.modelPath) {
     return (
@@ -249,7 +247,7 @@ function ArtifactDisplay({ point }: { point: any }) {
             </div>
           </Html>
         </group>
-        
+
         {/* 石砖底座 - 根据模型大小调整 */}
         <mesh
           position={[groupPosition[0], groupPosition[1] - 0.15, groupPosition[2]]}
@@ -269,7 +267,7 @@ function ArtifactDisplay({ point }: { point: any }) {
             <primitive attach="map" object={createBrickTexture()} />
           </meshStandardMaterial>
         </mesh>
-        
+
       {isEditMode && isSelected && groupRef.current && (
         <TransformControls
           object={groupRef.current ?? undefined}
@@ -316,7 +314,7 @@ function ArtifactDisplay({ point }: { point: any }) {
             })}
           </group>
         )
-      
+
       case 'silk-scroll':
         return (
           <group ref={meshRef}>
@@ -347,7 +345,7 @@ function ArtifactDisplay({ point }: { point: any }) {
             </Cylinder>
           </group>
         )
-      
+
       case 'jade-artifact':
         return (
           <group ref={meshRef}>
@@ -364,7 +362,7 @@ function ArtifactDisplay({ point }: { point: any }) {
             </mesh>
           </group>
         )
-      
+
       default:
         return (
           <mesh castShadow>
@@ -374,7 +372,7 @@ function ArtifactDisplay({ point }: { point: any }) {
         )
     }
   }
-  
+
   return (
     <>
       <group
@@ -386,7 +384,7 @@ function ArtifactDisplay({ point }: { point: any }) {
       >
         {/* 文物模型 */}
         {getArtifactGeometry()}
-        
+
         {/* 石砖底座 - 根据模型大小调整 */}
         <mesh
           position={[0, -1.35, 0]}
@@ -407,7 +405,7 @@ function ArtifactDisplay({ point }: { point: any }) {
             <primitive attach="map" object={createBrickTexture()} />
           </meshStandardMaterial>
         </mesh>
-        
+
         {/* 标签 */}
         <Html
           position={[0, 2, 0]}
@@ -429,7 +427,7 @@ function ArtifactDisplay({ point }: { point: any }) {
             {point.name}
           </div>
         </Html>
-        
+
         {/* 访问标记 */}
         {point.visited && (
           <Sphere args={[0.15, 16, 16]} position={[0, 2.5, 0]}>
@@ -437,7 +435,7 @@ function ArtifactDisplay({ point }: { point: any }) {
           </Sphere>
         )}
       </group>
-      
+
       {/* TransformControls（仅编辑模式且选中时） */}
       {isEditMode && isSelected && groupRef.current && (
         <TransformControls

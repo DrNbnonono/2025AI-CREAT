@@ -6,6 +6,7 @@ export default function TimeOfDayControl() {
   const [currentTime, setCurrentTime] = useState<TimeOfDay>('day')
   const [isCycling, setIsCycling] = useState(false)
   const [isAutoMode, setIsAutoMode] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(true)
 
   useEffect(() => {
     // 恢复保存的设置
@@ -49,12 +50,29 @@ export default function TimeOfDayControl() {
   const times = timeOfDayService.getAllTimes()
 
   return (
-    <div className="time-of-day-control">
-      <div className="tod-header">
-        <span className="tod-icon">🌍</span>
-        <span className="tod-title">昼夜模式</span>
-        {isAutoMode && <span className="auto-badge">自动</span>}
-      </div>
+    <div className={`time-of-day-control ${!isExpanded ? 'collapsed' : ''}`}>
+      {!isExpanded ? (
+        <button
+          className="tod-toggle"
+          onClick={() => setIsExpanded(true)}
+          title="展开昼夜模式面板"
+        >
+          🌍
+        </button>
+      ) : (
+        <>
+          <div className="tod-header">
+            <span className="tod-icon">🌍</span>
+            <span className="tod-title">昼夜模式</span>
+            {isAutoMode && <span className="auto-badge">自动</span>}
+            <button
+              className="tod-collapse-button"
+              onClick={() => setIsExpanded(false)}
+              title="收起"
+            >
+              ✕
+            </button>
+          </div>
 
       <div className="tod-times">
         {times.map((time) => {
@@ -89,13 +107,15 @@ export default function TimeOfDayControl() {
         </button>
       </div>
 
-      <div className="tod-current">
-        <span className="current-label">当前:</span>
-        <span className="current-value">
-          {timeOfDayService.getConfig(currentTime).icon}
-          {timeOfDayService.getConfig(currentTime).label}
-        </span>
-      </div>
+          <div className="tod-current">
+            <span className="current-label">当前:</span>
+            <span className="current-value">
+              {timeOfDayService.getConfig(currentTime).icon}
+              {timeOfDayService.getConfig(currentTime).label}
+            </span>
+          </div>
+        </>
+      )}
     </div>
   )
 }

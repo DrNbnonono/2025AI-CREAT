@@ -10,6 +10,8 @@ import ModelManager from '../Admin/ModelManager'
 import ModelLibraryPanel from '../Admin/ModelLibraryPanel'
 import EditorToolbar from '../Admin/EditorToolbar'
 import PropertyPanel from '../Admin/PropertyPanel'
+import LLMConfigPanel from '../Admin/LLMConfigPanel'
+import TTSConfigPanel from '../Admin/TTSConfigPanel'
 import TTSControls from './TTSControls'
 import AudioControls from './AudioControls'
 import TimeOfDayControl from './TimeOfDayControl'
@@ -26,6 +28,8 @@ export default function UI() {
   // 管理员状态
   const userRole = useAdminStore((state) => state.userRole)
   const isEditMode = useAdminStore((state) => state.isEditMode)
+  const showLLMConfig = useAdminStore((state) => state.showLLMConfig)
+  const showTTSConfig = useAdminStore((state) => state.showTTSConfig)
   
   // 场景名称映射
   const sceneNames = {
@@ -75,6 +79,10 @@ export default function UI() {
       {isEditMode && <ModelLibraryPanel />}
       {isEditMode && <PropertyPanel />}
       {isEditMode && <ModelManager />}
+
+      {/* 配置面板 - 独立渲染 */}
+      {showLLMConfig && <LLMConfigPanel onClose={() => useAdminStore.getState().setShowLLMConfig(false)} />}
+      {showTTSConfig && <TTSConfigPanel onClose={() => useAdminStore.getState().setShowTTSConfig(false)} />}
       
       {/* 标题和信息 */}
       <div className="header">

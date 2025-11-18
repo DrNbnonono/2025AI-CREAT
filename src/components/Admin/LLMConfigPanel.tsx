@@ -131,11 +131,20 @@ export default function LLMConfigPanel({ onClose }: { onClose: () => void }) {
     const provider = providers.find(p => p.id === providerId)
     if (!provider) return
 
+    // 保留当前模型，除非切换到有预设模型的提供商且用户没有自定义输入
+    let newModel = config.model
+    const hasCustomModel = config.model && !providers.find(p => p.id === config.provider)?.models?.includes(config.model)
+
+    // 如果当前没有自定义模型，且新提供商有默认模型，则使用默认模型
+    if (!hasCustomModel && provider.defaultModel) {
+      newModel = provider.defaultModel
+    }
+
     setConfig({
       provider: providerId,
       baseURL: provider.baseURL,
-      apiKey: '',
-      model: provider.defaultModel || '',
+      apiKey: '', // 切换提供商时清空API密钥
+      model: newModel,
     })
     setTestStatus('idle')
   }
@@ -232,28 +241,33 @@ export default function LLMConfigPanel({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {/* 模型选择 */}
+          {/* 模型选择 - 所有提供商都支持自定义 */}
           <div className="config-section">
             <label className="config-label">模型</label>
-            {selectedProvider?.models ? (
-              <select
-                className="config-select"
-                value={config.model}
-                onChange={(e) => setConfig({ ...config, model: e.target.value })}
-              >
-                {selectedProvider.models.map(model => (
-                  <option key={model} value={model}>{model}</option>
-                ))}
-              </select>
-            ) : (
+            <div className="model-input-container">
+              {selectedProvider?.models && selectedProvider.models.length > 0 && (
+                <select
+                  className="config-select"
+                  value={selectedProvider.models.includes(config.model) ? config.model : ''}
+                  onChange={(e) => setConfig({ ...config, model: e.target.value })}
+                >
+                  <option value="">-- 从预设模型中选择 --</option>
+                  {selectedProvider.models.map(model => (
+                    <option key={model} value={model}>{model}</option>
+                  ))}
+                </select>
+              )}
               <input
                 type="text"
                 className="config-input"
                 value={config.model}
                 onChange={(e) => setConfig({ ...config, model: e.target.value })}
-                placeholder="模型名称"
+                placeholder="输入自定义模型名称"
               />
-            )}
+            </div>
+            <div className="input-hint">
+              💡 提示：从上方下拉选择预设模型，或直接在文本框中输入自定义模型名称
+            </div>
           </div>
 
           {/* 测试结果 */}

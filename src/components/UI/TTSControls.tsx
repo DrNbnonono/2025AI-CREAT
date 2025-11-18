@@ -8,6 +8,7 @@ export default function TTSControls() {
   const [isEnabled, setIsEnabled] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [voiceEnabled, setVoiceEnabled] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(true)
 
   useEffect(() => {
     // 从localStorage读取TTS设置
@@ -67,11 +68,27 @@ export default function TTSControls() {
 
   return (
     <div className="tts-controls">
-      <div className="tts-panel">
-        <div className="tts-header">
-          <span className="tts-icon">🔊</span>
-          <span className="tts-title">语音导览</span>
-        </div>
+      {!isExpanded ? (
+        <button
+          className="tts-toggle"
+          onClick={() => setIsExpanded(true)}
+          title="展开语音导览面板"
+        >
+          <span className="tts-toggle-icon">🔊</span>
+        </button>
+      ) : (
+        <div className="tts-panel">
+          <div className="tts-header">
+            <span className="tts-icon">🔊</span>
+            <span className="tts-title">语音导览</span>
+            <button
+              className="tts-collapse-button"
+              onClick={() => setIsExpanded(false)}
+              title="收起"
+            >
+              ✕
+            </button>
+          </div>
 
         <div className="tts-options">
           <label className="tts-option">
@@ -112,13 +129,14 @@ export default function TTSControls() {
           </button>
         </div>
 
-        {currentPoint && (
-          <div className="tts-current">
-            <span className="tts-current-label">当前讲解:</span>
-            <span className="tts-current-name">{currentPoint.name}</span>
-          </div>
-        )}
-      </div>
+          {currentPoint && (
+            <div className="tts-current">
+              <span className="tts-current-label">当前讲解:</span>
+              <span className="tts-current-name">{currentPoint.name}</span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

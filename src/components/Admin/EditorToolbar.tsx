@@ -1,15 +1,14 @@
 import { useEffect } from 'react'
-import { useState } from 'react'
 import { useAdminStore } from '../../store/useAdminStore'
 import { useStore } from '../../store/useStore'
-import LLMConfigPanel from './LLMConfigPanel'
 import './EditorToolbar.css'
 
 export default function EditorToolbar() {
-  const [showLLMConfig, setShowLLMConfig] = useState(false)
   const isEditMode = useAdminStore((s) => s.isEditMode)
   const transformMode = useAdminStore((s) => s.transformMode)
   const setTransformMode = useAdminStore((s) => s.setTransformMode)
+  const setShowLLMConfig = useAdminStore((s) => s.setShowLLMConfig)
+  const setShowTTSConfig = useAdminStore((s) => s.setShowTTSConfig)
   const selectedPointId = useStore((s) => s.selectedPointId)
   const setSelectedPoint = useStore((s) => s.setSelectedPoint)
   const deleteScenePoint = useStore((s) => s.deleteScenePoint)
@@ -115,7 +114,7 @@ export default function EditorToolbar() {
       )}
       
       <div className="toolbar-section">
-        <span className="toolbar-label">AI配置</span>
+        <span className="toolbar-label">配置</span>
         <div className="toolbar-actions">
           <button
             className="action-btn"
@@ -123,6 +122,13 @@ export default function EditorToolbar() {
             title="LLM配置"
           >
             🤖 LLM设置
+          </button>
+          <button
+            className="action-btn"
+            onClick={() => setShowTTSConfig(true)}
+            title="TTS配置"
+          >
+            🔊 TTS设置
           </button>
         </div>
       </div>
@@ -135,8 +141,6 @@ export default function EditorToolbar() {
         <span>Del删除</span>
         <span>Esc取消</span>
       </div>
-      
-      {showLLMConfig && <LLMConfigPanel onClose={() => setShowLLMConfig(false)} />}
     </div>
   )
 }

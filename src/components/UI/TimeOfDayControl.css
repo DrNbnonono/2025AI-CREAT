@@ -1,19 +1,25 @@
 .time-of-day-control {
   position: fixed;
-  bottom: 90px;
-  left: 20px;
-  background: rgba(255, 255, 255, 0.95);
+  top: 20px;
+  right: 320px;
+  background: rgba(250, 250, 250, 0.95);
   border-radius: 16px;
   padding: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
-  animation: slideInLeft 0.3s ease-out;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  animation: slideInRight 0.3s ease-out;
   min-width: 280px;
+  max-width: 320px;
+  border: 1px solid #EEEEEE;
+  z-index: 1001;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  /* 高度自适应内容 */
+  height: auto;
 }
 
-@keyframes slideInLeft {
+@keyframes slideInRight {
   from {
-    transform: translateX(-100%);
+    transform: translateX(100%);
     opacity: 0;
   }
   to {
@@ -22,13 +28,30 @@
   }
 }
 
+/* 收起状态 - 优化容器样式 */
+.time-of-day-control.collapsed {
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  min-width: 48px;
+  max-width: 48px;
+  width: 48px;
+}
+
+/* 管理员模式下收起状态的样式 */
+body.admin-mode .time-of-day-control.collapsed {
+  top: 20px;
+  right: 20px;
+}
+
 .tod-header {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+  border-bottom: 2px solid #F5F5F5;
 }
 
 .tod-icon {
@@ -38,17 +61,17 @@
 .tod-title {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: #424242;
   flex: 1;
 }
 
 .auto-badge {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #FFE0B2;
+  color: #F57C00;
   font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
 }
 
 .tod-times {
@@ -64,41 +87,43 @@
   align-items: center;
   gap: 4px;
   padding: 8px;
-  background: rgba(102, 126, 234, 0.1);
+  background: #FAFAFA;
   border: 2px solid transparent;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .tod-button:hover {
-  background: rgba(102, 126, 234, 0.2);
+  background: #F5F5F5;
+  border-color: #E0E0E0;
   transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .tod-button.active {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
-  border-color: #667eea;
-  box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+  background: #E8F5E9;
+  border-color: #66BB6A;
+  box-shadow: 0 0 0 3px rgba(102, 187, 106, 0.1);
 }
 
 .tod-button-icon {
-  font-size: 24px;
+  font-size: 22px;
   transition: all 0.2s;
 }
 
 .tod-button.active .tod-button-icon {
-  transform: scale(1.2);
+  transform: scale(1.15);
 }
 
 .tod-button-label {
   font-size: 11px;
-  color: #555;
+  color: #757575;
   font-weight: 500;
 }
 
 .tod-button.active .tod-button-label {
-  color: #667eea;
+  color: #424242;
   font-weight: 600;
 }
 
@@ -113,12 +138,13 @@
   padding: 8px 12px;
   border: none;
   border-radius: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #81C784;
   color: white;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(129, 199, 132, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -126,17 +152,24 @@
 }
 
 .tod-action-button:hover {
+  background: #66BB6A;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(129, 199, 132, 0.4);
 }
 
 .tod-action-button.secondary {
-  background: rgba(102, 126, 234, 0.2);
-  color: #667eea;
+  background: #FFE0B2;
+  color: #F57C00;
+  box-shadow: 0 2px 8px rgba(255, 193, 152, 0.3);
+}
+
+.tod-action-button.secondary:hover {
+  background: #FFCC80;
+  box-shadow: 0 4px 12px rgba(255, 193, 152, 0.4);
 }
 
 .tod-action-button.secondary.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #81C784;
   color: white;
 }
 
@@ -157,20 +190,70 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  background: rgba(102, 126, 234, 0.05);
+  padding: 10px 12px;
+  background: #FAFAFA;
   border-radius: 8px;
   font-size: 13px;
+  border: 1px solid #EEEEEE;
 }
 
 .current-label {
-  color: #888;
+  color: #9E9E9E;
+  font-weight: 500;
 }
 
 .current-value {
-  color: #667eea;
+  color: #FF7043;
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+}
+
+/* 收起按钮 */
+.tod-toggle {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(42, 42, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  font-size: 24px;
+  line-height: 1;
+  padding: 0;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.tod-toggle:hover {
+  background: rgba(60, 60, 60, 0.95);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* 折叠按钮 */
+.tod-collapse-button {
+  background: none;
+  border: none;
+  color: #757575;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.tod-collapse-button:hover {
+  background: #EEEEEE;
+  color: #424242;
+}
+
+/* 在管理员模式下，调整位置 */
+body.admin-mode .time-of-day-control {
+  top: 20px;
+  right: 320px;
 }

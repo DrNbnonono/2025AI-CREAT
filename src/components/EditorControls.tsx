@@ -4,6 +4,7 @@ import { useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { Vector3 } from 'three'
 import { useAdminStore } from '../store/useAdminStore'
+import { useStore } from '../store/useStore'
 
 /**
  * 编辑器模式控制器（管理员专用）
@@ -56,8 +57,14 @@ export default function EditorControls() {
       if (isUiInteracting) return
       // 排除输入框
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      
+
       switch (e.code) {
+        // ESC 退出编辑模式
+        case 'Escape':
+          e.preventDefault()
+          useStore.getState().setSelectedPoint(null)
+          break
+
         // WASD 平移
         case 'KeyW': moveState.current.forward = true; break
         case 'KeyS': moveState.current.backward = true; break
@@ -65,7 +72,7 @@ export default function EditorControls() {
         case 'KeyD': moveState.current.right = true; break
         case 'KeyQ': moveState.current.down = true; break
         case 'KeyE': moveState.current.up = true; break
-        
+
         // IJKL 旋转视角
         case 'KeyI': moveState.current.rotateUp = true; break
         case 'KeyK': moveState.current.rotateDown = true; break

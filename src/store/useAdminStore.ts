@@ -11,12 +11,16 @@ interface AdminState {
   // 用户信息
   userRole: UserRole
   isAuthenticated: boolean
-  
+
   // 编辑模式
   isEditMode: boolean
   isUiInteracting: boolean
   transformMode: 'translate' | 'rotate' | 'scale'
-  
+
+  // 配置面板状态
+  showLLMConfig: boolean
+  showTTSConfig: boolean
+
   // Actions
   login: (password: string) => boolean
   logout: () => void
@@ -24,6 +28,8 @@ interface AdminState {
   setUserRole: (role: UserRole) => void
   setIsUiInteracting: (value: boolean) => void
   setTransformMode: (mode: 'translate' | 'rotate' | 'scale') => void
+  setShowLLMConfig: (show: boolean) => void
+  setShowTTSConfig: (show: boolean) => void
 }
 
 // 简单的密码验证（实际项目中应该用更安全的方式）
@@ -38,6 +44,8 @@ export const useAdminStore = create<AdminState>()(
       isEditMode: false,
       isUiInteracting: false,
       transformMode: 'translate',
+      showLLMConfig: false,
+      showTTSConfig: false,
       
       // 登录
       login: (password: string) => {
@@ -78,8 +86,12 @@ export const useAdminStore = create<AdminState>()(
       },
 
       setIsUiInteracting: (value) => set({ isUiInteracting: value }),
-      
+
       setTransformMode: (mode) => set({ transformMode: mode }),
+
+      setShowLLMConfig: (show) => set({ showLLMConfig: show }),
+
+      setShowTTSConfig: (show) => set({ showTTSConfig: show }),
     }),
     {
       name: 'admin-storage', // localStorage 中的 key
