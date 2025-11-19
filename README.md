@@ -17,6 +17,8 @@
 - 📱 **响应式设计** - 支持桌面端和移动端
 - ⚡ **高性能优化** - 采用 LOD、压缩等技术确保流畅运行
 
+
+
 ## 🚀 快速开始
 
 > 如果已经具备 Node.js 与 npm 环境，直接按照下方“全量部署教程”执行即可。
@@ -228,25 +230,6 @@
 - 重力和跳跃物理
 - 地面碰撞检测
 
-## 🎨 场景文物
-
-当前包含三件传统文化文物：
-
-1. **商代青铜鼎** 🏺
-   - 位置：场景中央
-   - 特点：失蜡法铸造，饕餮纹饰
-   - 文化价值：礼器，权力象征
-
-2. **唐代丝绸画卷** 📜
-   - 位置：场景左侧
-   - 特点：精美织锦，色彩艳丽
-   - 文化价值：丝绸之路的见证
-
-3. **战国玉璧** 💍
-   - 位置：场景右侧
-   - 特点：温润如玉，工艺精湛
-   - 文化价值：君子比德于玉
-
 ## 🔧 自定义与扩展
 
 ### 添加新的场景点位
@@ -275,9 +258,12 @@
 - ⚠️ **SKP** (SketchUp 原生格式，需转换为 GLB/GLTF)
 
 **使用步骤**:
+
 1. 将模型文件放入 `public/models/` 目录
 2. 开发模式会自动扫描并添加到模型库
 3. 在管理员模式中选择并放置模型
+
+![模型放置](./pictures/admin-set.png)
 
 **SKP 文件转换**:
 - 在线工具: https://products.aspose.app/3d/zh/conversion/skp-to-gltf
@@ -291,38 +277,20 @@
 
 ### 更换 AI 服务
 
-支持任何 OpenAI 兼容的 API，只需在 `.env` 中配置：
+支持任何 OpenAI 兼容的 API，只需在 `.env` 中配置，当然你也可以选择在管理员模式下在可视化的前端配置：
 
-**Ollama 本地模型（推荐用于开发）：**
+**LM Studio 本地模型（推荐用于开发）：**
+
 ```env
 VITE_AI_BASE_URL=http://localhost:11434/v1
-VITE_AI_MODEL=qwen2.5:7b
+VITE_AI_MODEL=You MODEL
 VITE_AI_PROVIDER=ollama
-# 注意：Ollama 不需要 API Key
+# 注意：LM Studio 不需要 API Key
 ```
 
-**如何使用 Ollama：**
-1. 访问 https://ollama.com/download 下载安装
-2. 运行 `ollama pull qwen2.5:7b` 下载模型
-3. 确保 Ollama 服务正在运行（通常自动启动）
-4. 配置 `.env` 文件为上述 Ollama 配置
-5. 启动项目即可使用本地 AI
+![LM Studio配置后问答](./pictures/AI-talk-change.png)
 
-**通义千问示例：**
-```env
-VITE_AI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-VITE_AI_API_KEY=your_tongyi_api_key
-VITE_AI_MODEL=qwen-turbo
-VITE_AI_PROVIDER=tongyi
-```
 
-**OpenAI GPT：**
-```env
-VITE_AI_BASE_URL=https://api.openai.com/v1
-VITE_AI_API_KEY=sk-your_openai_key
-VITE_AI_MODEL=gpt-3.5-turbo
-VITE_AI_PROVIDER=openai
-```
 
 ## 📱 兼容性
 
@@ -396,7 +364,7 @@ MIT License
 
 如有问题或建议，请通过以下方式联系：
 - 提交 GitHub Issue
-- 发送邮件到：[your-email]
+- 发送邮件到：[2116197323@qq.com]
 
 ---
 
