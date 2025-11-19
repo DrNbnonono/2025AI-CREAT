@@ -52,6 +52,10 @@ public/models/**/*.jpeg
 决赛/
 .trae/
 .CLAUDE.md
+.claude/
 
 # 图片
 assets/
+
+# 测试文件
+lm-studio-test.html
