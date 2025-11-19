@@ -13,10 +13,11 @@
 - 🎮 **第一人称自由探索** - 使用 WASD/方向键移动，鼠标环顾四周
 - 🏺 **智能触发系统** - 靠近文物自动触发 AI 讲解
 - 🤖 **AI 智能导览** - 支持实时对话，回答关于文物的任何问题
+- 🌍 **昼夜光照切换** - 黎明、白天、黄昏、夜晚四种光照模式，动态调整环境氛围
+- 🔊 **TTS 语音导览** - 文本转语音自动朗诵，支持多种语音引擎和参数调节
 - 🎨 **精美 3D 场景** - 基于 Three.js 构建的逼真环境
 - 📱 **响应式设计** - 支持桌面端和移动端
-- ⚡ **高性能优化** - 采用 LOD、压缩等技术确保流畅运行
-
+- ⚡ **高性能优化** - 采用空间索引、纹理缓存、代码分割等技术确保流畅运行
 
 
 ## 🚀 快速开始
@@ -152,10 +153,14 @@
 │   │   │   ├── ChatPanel.tsx / ChatPanel.css
 │   │   │   ├── SceneInfo.tsx / SceneInfo.css
 │   │   │   ├── Instructions.tsx / Instructions.css
-│   │   │   └── LoadingScreen.tsx / LoadingScreen.css
+│   │   │   ├── LoadingScreen.tsx / LoadingScreen.css
+│   │   │   ├── TTSControls.tsx / TTSControls.css
+│   │   │   ├── AudioControls.tsx / AudioControls.css
+│   │   │   └── TimeOfDayControl.tsx / TimeOfDayControl.css
 │   │   │
 │   │   ├── Scene.tsx               # Three.js 主场景容器
 │   │   ├── Experience.tsx          # 核心体验逻辑（触发检测、控制切换）
+│   │   ├── SceneLighting.tsx       # 昼夜光照管理系统
 │   │   ├── FirstPersonControls.tsx # 游客模式第一人称控制器
 │   │   ├── EditorControls.tsx      # 管理员 Orbit 控制器
 │   │   ├── ModelPlacementHelper.tsx# 鼠标射线预览与放置
@@ -166,13 +171,18 @@
 │   │       ├── ModelManager.tsx / ModelManager.css
 │   │       ├── ModelLibraryPanel.tsx / ModelLibraryPanel.css
 │   │       ├── PropertyPanel.tsx / PropertyPanel.css
-│   │       └── EditorToolbar.tsx / EditorToolbar.css
+│   │       ├── EditorToolbar.tsx / EditorToolbar.css
+│   │       ├── LLMConfigPanel.tsx / LLMConfigPanel.css
+│   │       └── TTSConfigPanel.tsx / TTSConfigPanel.css
 │   │
 │   ├── data/                    # 预设数据
 │   │   └── sceneData.ts         # 默认场景点位与 AI 文案
 │   │
 │   ├── services/                # 业务服务层
-│   │   └── aiService.ts         # AI API 服务（多提供商、<think> 过滤）
+│   │   ├── aiService.ts         # AI API 服务（多提供商、<think> 过滤）
+│   │   ├── timeOfDayService.ts  # 昼夜切换服务
+│   │   ├── ttsService.ts        # TTS 文本转语音服务
+│   │   └── audioService.ts      # 音频控制服务
 │   │
 │   ├── store/                   # 全局状态管理（Zustand）
 │   │   ├── useStore.ts          # 玩家/场景/对话状态
@@ -292,6 +302,51 @@ VITE_AI_PROVIDER=ollama
 
 
 
+### TTS 语音配置
+
+项目支持多种 TTS（文本转语音）提供商，可通过管理员面板配置：
+
+**免费选项：**
+- **浏览器原生** - 使用 Web Speech API，无需配置即可使用
+- **Ollama TTS** - 本地大模型语音合成，免费但需安装 Ollama
+
+**付费选项：**
+- **Azure 认知服务** - 微软Azure语音服务，音质优秀
+- **百度语音合成** - 对中文优化
+- **科大讯飞** - 识别准确度高
+- **OpenAI TTS** - 音质极佳
+- **自定义 API** - 支持 OpenAI 兼容的 TTS API
+
+**配置方法：**
+1. 在管理员模式下，点击右上角"TTS 配置"按钮
+2. 选择语音提供商
+3. 输入 API Key（如需要）
+4. 调整语音参数：语速、音调、音量
+5. 点击"保存配置"
+
+### 昼夜光照模式
+
+项目提供四种昼夜光照模式，可手动切换或自动循环：
+
+**模式特点：**
+- **🌅 黎明** - 温暖的橙红色光线，薄雾朦胧
+- **☀️ 白天** - 明亮的白光，清晰的视野
+- **🌇 黄昏** - 柔和的暖色调，浪漫氛围
+- **🌙 夜晚** - 深蓝色调，神秘宁静
+
+**操作方式：**
+- 点击右上角"🌍 昼夜模式"面板
+- 选择任意时间模式
+- 或点击"🔄 循环"自动切换
+- 或点击"🤖 自动"开启智能循环（每30秒自动切换）
+
+**技术实现：**
+- 动态光照系统（环境光 + 定向光）
+- 雾效自动调整（颜色、范围）
+- 背景色渐变过渡
+- 平滑过渡动画（3秒）
+
+
 ## 📱 兼容性
 
 - ✅ Chrome 90+
@@ -311,11 +366,14 @@ VITE_AI_PROVIDER=ollama
    - 使用 WebP 格式
    - 纹理尺寸不超过 2048x2048
    - 启用 mipmap
+   - 已实现纹理缓存，避免重复生成
 
 3. **代码优化**
    - 已实现代码分割（three-vendor chunk）
    - 使用 React.memo 减少不必要的重渲染
    - 避免在每帧中创建新对象
+   - 采用空间索引（8单位网格）进行高效的触发检测
+   - 纹理缓存机制，避免重复创建相同纹理
 
 ## 🐛 常见问题
 

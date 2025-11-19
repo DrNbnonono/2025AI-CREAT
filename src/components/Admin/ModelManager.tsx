@@ -28,12 +28,17 @@ export default function ModelManager() {
   const [showSceneForm, setShowSceneForm] = useState(false)
   const [showEditSceneForm, setShowEditSceneForm] = useState(false)
   const [panelHeight, setPanelHeight] = useState(() => {
-    if (typeof window === 'undefined') return 380
+    if (typeof window === 'undefined') return 500
     const stored = Number.parseInt(localStorage.getItem('model-manager-height') || '', 10)
     if (Number.isFinite(stored) && stored >= 260) {
       return stored
     }
-    return 380
+    return 500
+  })
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    const stored = localStorage.getItem('model-manager-collapsed')
+    return stored ? stored === 'true' : false
   })
   const [formData, setFormData] = useState({
     id: '',
@@ -138,9 +143,27 @@ export default function ModelManager() {
       document.body.style.userSelect = 'auto'
     }
   }, [handleResizeEnd, handleResizeMove])
-  
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem('model-manager-collapsed', collapsed ? 'true' : 'false')
+  }, [collapsed])
+
   if (!isEditMode) return null
-  
+
+  // 收起状态显示浮动按钮
+  if (collapsed) {
+    return (
+      <button
+        className="model-manager-toggle"
+        onClick={() => setCollapsed(false)}
+        title="展开模型管理面板"
+      >
+        📦 模型管理
+      </button>
+    )
+  }
+
   const handleAddPoint = () => {
     if (!formData.id || !formData.name || !formData.modelPath) return
     addScenePoint({
@@ -327,6 +350,7 @@ export default function ModelManager() {
       <div className="manager-header">
         <h3>📦 模型管理</h3>
         <span className="current-scene">当前场景: {currentSceneName}</span>
+        <button className="manager-collapse-btn" onClick={() => setCollapsed(true)} title="收起面板">‹</button>
       </div>
 
       <div className="manager-actions">

@@ -314,3 +314,49 @@
 .save-button:active {
   transform: translateY(0);
 }
+
+/* 语音加载按钮 */
+.load-voices-button {
+  padding: 6px 12px;
+  background: #81C784;
+  border: 1px solid #66BB6A;
+  border-radius: 6px;
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(129, 199, 132, 0.2);
+}
+
+.load-voices-button:hover:not(:disabled) {
+  background: #66BB6A;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(129, 199, 132, 0.3);
+}
+
+.load-voices-button:active {
+  transform: translateY(0);
+}
+
+.load-voices-button:disabled {
+  background: #BDBDBD;
+  border-color: #BDBDBD;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* 语音未加载提示 */
+.voices-not-loaded {
+  padding: 16px;
+  background: #F5F5F5;
+  border: 1px dashed #E0E0E0;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.voices-not-loaded p {
+  margin: 0;
+  color: #757575;
+  font-size: 13px;
+}

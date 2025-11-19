@@ -10,6 +10,7 @@ import EditorControls from './EditorControls'
 import ModelPlacementHelper from './ModelPlacementHelper'
 import SceneEnvironment from './SceneEnvironment'
 import TriggerZones from './TriggerZones'
+import SceneLighting from './SceneLighting'
 
 export default function Experience() {
   const currentPoint = useStore((state) => state.currentPoint)
@@ -82,6 +83,9 @@ export default function Experience() {
   
   return (
     <>
+      {/* 昼夜光照系统 */}
+      <SceneLighting />
+
       {/* 控制器切换：编辑模式 vs 游客模式 */}
       {isEditMode ? (
         <>
@@ -91,10 +95,10 @@ export default function Experience() {
       ) : (
         <FirstPersonControls ref={controlsRef} />
       )}
-      
+
       {/* 场景环境（地面、文物等） */}
       <SceneEnvironment />
-      
+
       {/* 触发区域可视化（开发时或编辑模式下） */}
       <TriggerZones />
     </>

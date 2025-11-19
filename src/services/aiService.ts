@@ -6,7 +6,7 @@ interface AIConfig {
   apiKey: string
   baseURL: string
   model: string
-  provider: 'openai' | 'tongyi' | 'wenxin' | 'ollama' | 'custom'
+  provider: 'openai' | 'tongyi' | 'wenxin' | 'ollama' | 'custom' | 'lmstudio'
 }
 
 // 默认配置（用户需要根据实际情况修改）
@@ -29,11 +29,45 @@ export async function getAIResponse(
   messages: ChatMessage[],
   config: Partial<AIConfig> = {}
 ): Promise<string> {
-  const finalConfig = { ...defaultConfig, ...config }
-  
-  // 如果没有配置API Key且不是 Ollama 或 openai provider（LM Studio使用openai provider但不需要真实key），返回模拟回复
-  if (!finalConfig.apiKey && finalConfig.provider !== 'ollama' && finalConfig.provider !== 'openai') {
-    if (import.meta.env.DEV) console.warn('未配置AI API Key，使用模拟回复')
+  // 优先从 localStorage 读取用户配置（通过LLMConfigPanel设置），再使用环境变量
+  let storedConfig: Partial<AIConfig> = {}
+  if (typeof window !== 'undefined') {
+    const savedConfig = localStorage.getItem('llm-config')
+    if (savedConfig) {
+      try {
+        storedConfig = JSON.parse(savedConfig)
+        if (import.meta.env.DEV) console.log('📂 读取 localStorage 配置:', storedConfig)
+      } catch (e) {
+        console.warn('❌ 无法解析 localStorage 配置:', e)
+      }
+    }
+  }
+
+  // 合并配置：环境变量 < localStorage < 函数参数
+  const finalConfig = { ...defaultConfig, ...storedConfig, ...config }
+
+  // 如果没有配置API Key且不是 Ollama、LM Studio 或本地服务，返回模拟回复
+  // 检测是否为本地服务（localhost、127.0.0.1、192.168.x.x或169.254.x.x）
+  const isLocalService = finalConfig.baseURL.includes('localhost') ||
+                         finalConfig.baseURL.includes('127.0.0.1') ||
+                         finalConfig.baseURL.match(/^https?:\/\/(192\.168\.|10\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[0-1]\.)/) ||
+                         finalConfig.baseURL.match(/^https?:\/\/169\.254\./)
+
+  if (!finalConfig.apiKey &&
+      finalConfig.provider !== 'ollama' &&
+      finalConfig.provider !== 'custom' &&
+      finalConfig.provider !== 'lmstudio' &&
+      !isLocalService) {
+    if (import.meta.env.DEV) {
+      console.warn('⚠️ 未配置AI API Key，使用模拟回复')
+      console.log('📋 配置详情:', {
+        provider: finalConfig.provider,
+        baseURL: finalConfig.baseURL,
+        isLocalService: isLocalService,
+        configSource: storedConfig.baseURL ? 'localStorage' : 'environment'
+      })
+      console.log('💡 提示：如果是本地服务（如LM Studio、Ollama），确保Base URL包含localhost、127.0.0.1、192.168.x.x或169.254.x.x')
+    }
     return getMockResponse(messages[messages.length - 1]?.content || '')
   }
   
@@ -42,7 +76,9 @@ export async function getAIResponse(
       provider: finalConfig.provider,
       model: finalConfig.model,
       baseURL: finalConfig.baseURL,
-      hasApiKey: !!finalConfig.apiKey
+      hasApiKey: !!finalConfig.apiKey,
+      isLocalService,
+      configSource: storedConfig.baseURL ? 'localStorage' : 'environment'
     })
   }
   
@@ -50,23 +86,33 @@ export async function getAIResponse(
     // 构建请求头
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
     }
-    
-    // Ollama 不需要 Authorization 头
-    if (finalConfig.provider !== 'ollama' && finalConfig.apiKey) {
+
+    // Ollama、LM Studio、custom provider和本地服务不需要Authorization头（如果apiKey为空或使用本地地址）
+    if (finalConfig.apiKey && finalConfig.provider !== 'ollama' && finalConfig.provider !== 'custom' && finalConfig.provider !== 'lmstudio' && !isLocalService) {
       headers['Authorization'] = `Bearer ${finalConfig.apiKey}`
     }
-    
-    // OpenAI 兼容格式（Ollama 也支持）
+
+    // 准备请求体
+    const requestBody = {
+      model: finalConfig.model,
+      messages: messages,
+      temperature: 0.7,
+      max_tokens: 1000,
+      stream: false,
+    }
+
+    if (import.meta.env.DEV) {
+      console.log('📡 发送请求到:', `${finalConfig.baseURL}/chat/completions`)
+      console.log(' 请求头:', headers)
+      console.log('📦 请求体:', requestBody)
+    }
+
+    // OpenAI 兼容格式（Ollama、LM Studio、custom provider 也支持）
     const response = await axios.post(
       `${finalConfig.baseURL}/chat/completions`,
-      {
-        model: finalConfig.model,
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 1000,
-        stream: false,
-      },
+      requestBody,
       {
         headers,
         timeout: 30000,
@@ -91,15 +137,34 @@ export async function getAIResponse(
     if (import.meta.env.DEV) console.log('✅ AI 回复成功，长度:', reply.length)
     return reply
   } catch (error: any) {
-    console.error('❌ AI API 调用失败:', error)
-    if (import.meta.env.DEV) console.error('错误详情:', error.response?.data || error.message)
-    
+    console.error('❌ AI API 调用失败')
+    console.error('错误类型:', error.name)
+    console.error('错误信息:', error.message)
+    console.error('响应状态:', error.response?.status)
+    console.error('响应数据:', error.response?.data)
+
+    // 检测是否为 CORS 错误
+    const isCorsError = error.message.includes('CORS') ||
+                        error.message.includes('Cross-Origin') ||
+                        error.message.includes('Network Error')
+
     if (error.response?.status === 401) {
-      return '抱歉，API认证失败，请检查您的API Key配置。'
+      return `抱歉，API认证失败（401）。\n\n可能的原因：\n• API Key无效或过期\n• 请检查.env文件中的VITE_AI_API_KEY配置\n• LM Studio无需API Key，确保VITE_AI_API_KEY为空`
+    } else if (error.response?.status === 404) {
+      return `抱歉，未找到AI服务（404）。\n\n请检查：\n• LM Studio是否已启动\n• Base URL是否正确（如：http://localhost:1234/v1）\n• 确保在LM Studio中启用了"Enable CORS"`
     } else if (error.code === 'ECONNABORTED') {
-      return '抱歉，请求超时，请稍后再试。'
+      return '抱歉，请求超时（30秒）。请检查网络连接或LM Studio是否正常运行。'
+    } else if (error.code === 'ECONNREFUSED') {
+      return `抱歉，无法连接到AI服务。\n\n请检查：\n• LM Studio是否已启动\n• Base URL是否正确（默认：http://localhost:1234/v1）\n• 端口是否被占用\n• 防火墙是否阻止了连接`
+    } else if (isCorsError) {
+      return `⚠️ CORS 跨域错误\n\n这是最常见的问题！请立即执行以下步骤：\n\n1️⃣ 打开 LM Studio\n2️⃣ 进入 Settings → Developer\n3️⃣ 勾选 "Enable CORS" ☑️\n4️⃣ 重启 LM Studio\n5️⃣ 重新测试\n\n如果仍有问题，请使用项目根目录下的 lm-studio-test.html 工具进行调试。`
+    } else if (error.response?.data?.error) {
+      const errorMsg = error.response.data.error.message || JSON.stringify(error.response.data.error)
+      return `AI服务返回错误：\n${errorMsg}`
+    } else if (error.message.includes('Failed to fetch')) {
+      return `网络连接失败。\n\n可能的原因：\n• LM Studio 未启动\n• IP 地址或端口错误\n• CORS 未启用\n• 防火墙阻止\n\n解决方案：\n1. 确保 LM Studio 已启动且模型已加载\n2. 检查 .env 中的 VITE_AI_BASE_URL\n3. 启用 LM Studio 的 CORS 设置\n4. 使用 lm-studio-test.html 测试连接`
     } else {
-      return '抱歉，AI服务暂时不可用，请稍后再试。'
+      return `抱歉，AI服务暂时不可用。\n\n错误详情：${error.message}\n\n请检查：\n• LM Studio是否正常运行\n• 模型是否已加载\n• CORS 是否已启用\n• 网络连接是否正常\n\n建议使用 lm-studio-test.html 工具进行诊断。`
     }
   }
 }

@@ -1,8 +1,8 @@
 .chat-panel {
   position: fixed;
-  left: 24px;
-  top: 220px;
-  width: 360px;
+  top: var(--chat-top, 80px);
+  right: var(--chat-right, 20px);
+  width: 480px;
   max-height: calc(100vh - 260px);
   background: rgba(20, 20, 20, 0.9);
   border-radius: 12px;
@@ -12,7 +12,13 @@
   flex-direction: column;
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
-  z-index: 900;
+  z-index: var(--chat-z-index, 1000);
+  transition: box-shadow 0.2s;
+}
+
+.chat-panel.dragging {
+  cursor: grabbing;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
 }
 
 /* 头部 */
@@ -24,6 +30,12 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(0, 0, 0, 0.2);
   border-radius: 16px 16px 0 0;
+  cursor: grab;
+  user-select: none;
+}
+
+.chat-header:active {
+  cursor: grabbing;
 }
 
 .chat-title {
@@ -122,6 +134,106 @@
   max-width: 100%; /* 限制最大宽度 */
 }
 
+/* Markdown 内容样式 */
+.message-text h1,
+.message-text h2,
+.message-text h3,
+.message-text h4,
+.message-text h5,
+.message-text h6 {
+  margin: 16px 0 8px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.message-text h1 { font-size: 20px; }
+.message-text h2 { font-size: 18px; }
+.message-text h3 { font-size: 16px; }
+.message-text h4 { font-size: 15px; }
+.message-text h5 { font-size: 14px; }
+.message-text h6 { font-size: 13px; }
+
+.message-text p {
+  margin: 8px 0;
+}
+
+.message-text ul,
+.message-text ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.message-text li {
+  margin: 4px 0;
+}
+
+.message-text code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 0.9em;
+  color: #FFD700;
+}
+
+.message-text pre {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.message-text pre code {
+  background: transparent;
+  padding: 0;
+  color: #fff;
+}
+
+.message-text strong {
+  font-weight: 600;
+  color: #FFD700;
+}
+
+.message-text em {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.message-text blockquote {
+  border-left: 3px solid rgba(255, 215, 0, 0.5);
+  padding-left: 12px;
+  margin: 8px 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.message-text a {
+  color: #FFD700;
+  text-decoration: underline;
+}
+
+.message-text a:hover {
+  color: #FFA500;
+}
+
+.message-text table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+}
+
+.message-text th,
+.message-text td {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.message-text th {
+  background: rgba(0, 0, 0, 0.3);
+  font-weight: 600;
+}
+
 .user-message .message-text {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
@@ -139,6 +251,54 @@
   font-size: 11px;
   color: rgba(255, 255, 255, 0.4);
   padding: 0 4px;
+}
+
+/* 播报按钮 */
+.speak-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  margin-left: 4px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.speak-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 215, 0, 0.4);
+  color: #FFD700;
+  transform: translateY(-1px);
+}
+
+.speak-button:active {
+  transform: translateY(0);
+}
+
+.speak-button.speaking {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: rgba(255, 215, 0, 0.6);
+  color: #FFD700;
+  animation: pulse 1.5s infinite;
+}
+
+.speak-button-text {
+  font-size: 11px;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* 输入中动画 */

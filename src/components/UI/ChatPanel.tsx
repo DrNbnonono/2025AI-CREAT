@@ -1,8 +1,10 @@
 // 聊天面板组件
 
 import { useState, useRef, useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { useStore } from '../../store/useStore'
 import { getAIResponse, buildSystemPrompt } from '../../services/aiService'
+import { speakText, stopSpeaking } from '../../services/ttsService'
 import './ChatPanel.css'
 
 export default function ChatPanel() {
@@ -14,10 +16,77 @@ export default function ChatPanel() {
   const setAILoading = useStore((state) => state.setAILoading)
   const setShowChat = useStore((state) => state.setShowChat)
   const clearMessages = useStore((state) => state.clearMessages)
-  
+
+  // 拖拽相关状态
+  const [position, setPosition] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('chat-panel-position')
+      if (saved) return JSON.parse(saved)
+    }
+    return { top: 80, right: 20 } // 默认位置
+  })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null)
+
+  const panelRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  
+
+  // 保存位置到localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('chat-panel-position', JSON.stringify(position))
+    }
+  }, [position])
+
+  // 拖拽开始
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).classList.contains('chat-header')) {
+      setIsDragging(true)
+      const rect = panelRef.current?.getBoundingClientRect()
+      if (rect) {
+        setDragOffset({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        })
+      }
+    }
+  }
+
+  // 拖拽中
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        e.preventDefault()
+        setPosition({
+          top: Math.max(0, e.clientY - dragOffset.y),
+          right: Math.max(0, window.innerWidth - e.clientX - dragOffset.x),
+        })
+      }
+    }
+
+    const handleMouseUp = () => {
+      if (isDragging) {
+        setIsDragging(false)
+      }
+    }
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = 'grabbing'
+      document.body.style.userSelect = 'none'
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+  }, [isDragging, dragOffset])
+
   // 自动滚动到底部
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -85,9 +154,44 @@ export default function ChatPanel() {
     setInput(question)
     inputRef.current?.focus()
   }
+
+  // 播报消息
+  const handleSpeakMessage = (messageId: string, text: string) => {
+    if (speakingMessageId === messageId) {
+      // 如果正在播报此消息，则停止播报
+      stopSpeaking()
+      setSpeakingMessageId(null)
+    } else {
+      // 播报新消息
+      stopSpeaking() // 先停止当前播报
+      setSpeakingMessageId(messageId)
+
+      speakText({
+        text: text,
+        onStart: () => {
+          setSpeakingMessageId(messageId)
+        },
+        onEnd: () => {
+          setSpeakingMessageId(null)
+        },
+        onError: () => {
+          setSpeakingMessageId(null)
+        },
+      })
+    }
+  }
   
   return (
-    <div className="chat-panel fade-in">
+    <div
+      ref={panelRef}
+      className={`chat-panel fade-in ${isDragging ? 'dragging' : ''}`}
+      style={{
+        '--chat-top': `${position.top}px`,
+        '--chat-right': `${position.right}px`,
+        '--chat-z-index': isDragging ? '9999' : '1000',
+      } as React.CSSProperties}
+      onMouseDown={handleMouseDown}
+    >
       {/* 头部 */}
       <div className="chat-header">
         <div className="chat-title">
@@ -135,13 +239,32 @@ export default function ChatPanel() {
               {message.role === 'user' ? '👤' : '🤖'}
             </div>
             <div className="message-content">
-              <div className="message-text">{message.content}</div>
+              <div className="message-text">
+                {message.role === 'assistant' ? (
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                ) : (
+                  message.content
+                )}
+              </div>
               <div className="message-time">
                 {new Date(message.timestamp).toLocaleTimeString('zh-CN', {
                   hour: '2-digit',
                   minute: '2-digit',
                 })}
               </div>
+              {/* 播报按钮 - 仅对AI消息显示 */}
+              {message.role === 'assistant' && (
+                <button
+                  className={`speak-button ${speakingMessageId === message.id ? 'speaking' : ''}`}
+                  onClick={() => handleSpeakMessage(message.id, message.content)}
+                  title={speakingMessageId === message.id ? '停止播报' : '播报此消息'}
+                >
+                  {speakingMessageId === message.id ? '⏹️' : '🔊'}
+                  <span className="speak-button-text">
+                    {speakingMessageId === message.id ? '停止' : '播报'}
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         ))}

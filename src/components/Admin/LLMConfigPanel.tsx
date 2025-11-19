@@ -34,7 +34,7 @@ const providers: LLMProvider[] = [
     id: 'lmstudio',
     name: 'LM Studio',
     description: '本地OpenAI兼容API',
-    baseURL: 'http://localhost:1234/v1',
+    baseURL: 'http://169.254.204.98:1234/v1',
     requiresApiKey: false,
     defaultModel: 'local-model',
   },
@@ -111,13 +111,29 @@ export default function LLMConfigPanel({ onClose }: { onClose: () => void }) {
   const [testMessage, setTestMessage] = useState('')
 
   useEffect(() => {
-    // 从环境变量读取初始配置
+    // 优先从环境变量读取初始配置，再使用localStorage，最后使用默认配置
+    const envProvider = import.meta.env.VITE_AI_PROVIDER
+    const envBaseURL = import.meta.env.VITE_AI_BASE_URL
+    const envApiKey = import.meta.env.VITE_AI_API_KEY
+    const envModel = import.meta.env.VITE_AI_MODEL
+
     const savedConfig = localStorage.getItem('llm-config')
+
     if (savedConfig) {
+      // 有保存的配置，优先使用
       setConfig(JSON.parse(savedConfig))
+    } else if (envProvider || envBaseURL) {
+      // 有环境变量配置，使用环境变量
+      const provider = providers.find(p => p.id === envProvider) || providers.find(p => p.id === 'lmstudio') || providers[0]
+      setConfig({
+        provider: provider.id,
+        baseURL: envBaseURL || provider.baseURL,
+        apiKey: envApiKey || '',
+        model: envModel || provider.defaultModel || '',
+      })
     } else {
-      // 使用默认配置
-      const defaultProvider = providers.find(p => p.id === 'ollama') || providers[0]
+      // 使用默认配置（LM Studio）
+      const defaultProvider = providers.find(p => p.id === 'lmstudio') || providers[0]
       setConfig({
         provider: defaultProvider.id,
         baseURL: defaultProvider.baseURL,
@@ -160,22 +176,36 @@ export default function LLMConfigPanel({ onClose }: { onClose: () => void }) {
     setTestMessage('测试连接中...')
 
     try {
+      const selectedProvider = providers.find(p => p.id === config.provider)
+      const requiresAuth = selectedProvider?.requiresApiKey && config.apiKey
+
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (requiresAuth) {
+        headers['Authorization'] = `Bearer ${config.apiKey}`
+      }
+
       const response = await fetch(`${config.baseURL}/models`, {
-        headers: config.apiKey
-          ? { 'Authorization': `Bearer ${config.apiKey}` }
-          : {},
+        method: 'GET',
+        headers,
       })
 
       if (response.ok) {
+        const data = await response.json()
+        const modelCount = data.data?.length || 0
         setTestStatus('success')
-        setTestMessage('✅ 连接成功！')
+        setTestMessage(`✅ 连接成功！发现 ${modelCount} 个模型`)
       } else {
         setTestStatus('error')
-        setTestMessage(`❌ 连接失败: ${response.statusText}`)
+        setTestMessage(`❌ 连接失败 (${response.status}): ${response.statusText}`)
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('测试连接错误:', error)
       setTestStatus('error')
-      setTestMessage(`❌ 连接错误: ${error}`)
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        setTestMessage(`❌ 网络错误：无法连接到 ${config.baseURL}\n\n请检查：\n• LM Studio 是否已启动\n• IP 地址和端口是否正确\n• 是否启用了 CORS\n• 防火墙是否阻止连接`)
+      } else {
+        setTestMessage(`❌ 连接错误: ${error.message}`)
+      }
     }
   }
 
