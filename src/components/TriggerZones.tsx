@@ -47,7 +47,7 @@ export default function TriggerZones() {
               <Html
                 position={[point.position.x, point.radius + 0.5, point.position.z]}
                 center
-                style={{ pointerEvents: 'none' }}
+                style={{ pointerEvents: 'none', zIndex: 1 }}
               >
                 <div className="trigger-radius-label">
                   触发半径: {point.radius.toFixed(1)}m

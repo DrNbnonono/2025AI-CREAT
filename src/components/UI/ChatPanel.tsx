@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown'
 import { useStore } from '../../store/useStore'
 import { getAIResponse, buildSystemPrompt } from '../../services/aiService'
 import { speakText, stopSpeaking } from '../../services/ttsService'
+import ModelViewer from './ModelViewer'
 import './ChatPanel.css'
 
 export default function ChatPanel() {
@@ -16,6 +17,15 @@ export default function ChatPanel() {
   const setAILoading = useStore((state) => state.setAILoading)
   const setShowChat = useStore((state) => state.setShowChat)
   const clearMessages = useStore((state) => state.clearMessages)
+
+  // 面板放大状态
+  const [isExpanded, setIsExpanded] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('chat-panel-expanded')
+      return saved === 'true'
+    }
+    return false
+  })
 
   // 拖拽相关状态
   const [position, setPosition] = useState(() => {
@@ -39,6 +49,18 @@ export default function ChatPanel() {
       localStorage.setItem('chat-panel-position', JSON.stringify(position))
     }
   }, [position])
+
+  // 保存展开状态到localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('chat-panel-expanded', isExpanded.toString())
+    }
+  }, [isExpanded])
+
+  // 切换展开状态
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded)
+  }
 
   // 拖拽开始
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -184,7 +206,7 @@ export default function ChatPanel() {
   return (
     <div
       ref={panelRef}
-      className={`chat-panel fade-in ${isDragging ? 'dragging' : ''}`}
+      className={`chat-panel ${isDragging ? 'dragging' : ''} ${isExpanded ? 'expanded' : ''}`}
       style={{
         '--chat-top': `${position.top}px`,
         '--chat-right': `${position.right}px`,
@@ -202,6 +224,13 @@ export default function ChatPanel() {
           )}
         </div>
         <div className="chat-actions">
+          <button
+            className="expand-button"
+            onClick={toggleExpanded}
+            title={isExpanded ? '收起' : '展开'}
+          >
+            {isExpanded ? '🔽' : '🔼'}
+          </button>
           {messages.length > 0 && (
             <button
               className="clear-button"
@@ -220,105 +249,130 @@ export default function ChatPanel() {
           </button>
         </div>
       </div>
-      
-      {/* 消息列表 */}
-      <div className="chat-messages">
-        {messages.length === 0 && (
-          <div className="welcome-message">
-            <p>👋 您好！我是您的AI文化导览员。</p>
-            <p>您可以向我提问任何关于文物的问题。</p>
-          </div>
-        )}
+
+      {/* 主内容区域 */}
+      <div className="chat-content">
+        {/* 聊天区域 */}
+        <div className="chat-section">
+          {/* 消息列表 */}
+          <div className="chat-messages">
+            {messages.length === 0 && (
+              <div className="welcome-message">
+                <p>👋 您好！我是您的AI文化导览员。</p>
+                <p>您可以向我提问任何关于文物的问题。</p>
+              </div>
+            )}
+
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`message ${message.role === 'user' ? 'user-message' : 'ai-message'}`}
+              >
+                <div className="message-avatar">
+                  {message.role === 'user' ? '👤' : '🤖'}
+                </div>
+                <div className="message-content">
+                  <div className="message-text">
+                    {message.role === 'assistant' ? (
+                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                    ) : (
+                      message.content
+                    )}
+                  </div>
+                  <div className="message-time">
+                    {new Date(message.timestamp).toLocaleTimeString('zh-CN', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </div>
+                  {/* 播报按钮 - 仅对AI消息显示 */}
+                  {message.role === 'assistant' && (
+                    <button
+                      className={`speak-button ${speakingMessageId === message.id ? 'speaking' : ''}`}
+                      onClick={() => handleSpeakMessage(message.id, message.content)}
+                      title={speakingMessageId === message.id ? '停止播报' : '播报此消息'}
+                    >
+                      {speakingMessageId === message.id ? '⏹️' : '🔊'}
+                      <span className="speak-button-text">
+                        {speakingMessageId === message.id ? '停止' : '播报'}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
         
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`message ${message.role === 'user' ? 'user-message' : 'ai-message'}`}
-          >
-            <div className="message-avatar">
-              {message.role === 'user' ? '👤' : '🤖'}
-            </div>
-            <div className="message-content">
-              <div className="message-text">
-                {message.role === 'assistant' ? (
-                  <ReactMarkdown>{message.content}</ReactMarkdown>
-                ) : (
-                  message.content
-                )}
+            {isAILoading && (
+              <div className="message ai-message">
+                <div className="message-avatar">🤖</div>
+                <div className="message-content">
+                  <div className="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
               </div>
-              <div className="message-time">
-                {new Date(message.timestamp).toLocaleTimeString('zh-CN', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </div>
-              {/* 播报按钮 - 仅对AI消息显示 */}
-              {message.role === 'assistant' && (
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* 快捷问题 */}
+          {messages.length === 0 && (
+            <div className="quick-questions">
+              {quickQuestions.map((question, index) => (
                 <button
-                  className={`speak-button ${speakingMessageId === message.id ? 'speaking' : ''}`}
-                  onClick={() => handleSpeakMessage(message.id, message.content)}
-                  title={speakingMessageId === message.id ? '停止播报' : '播报此消息'}
+                  key={index}
+                  className="quick-question-btn"
+                  onClick={() => handleQuickQuestion(question)}
                 >
-                  {speakingMessageId === message.id ? '⏹️' : '🔊'}
-                  <span className="speak-button-text">
-                    {speakingMessageId === message.id ? '停止' : '播报'}
-                  </span>
+                  {question}
                 </button>
+              ))}
+            </div>
+          )}
+
+          {/* 输入区域 */}
+          <div className="chat-input-container">
+            <input
+              ref={inputRef}
+              type="text"
+              className="chat-input"
+              placeholder="输入您的问题..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              disabled={isAILoading}
+            />
+            <button
+              className="send-button"
+              onClick={handleSend}
+              disabled={!input.trim() || isAILoading}
+            >
+              {isAILoading ? '⏳' : '发送'}
+            </button>
+          </div>
+        </div>
+
+        {/* 模型预览区域 - 仅在展开时显示 */}
+        {isExpanded && (
+          <div className="model-preview-section">
+            <div className="model-preview-header">
+              <span className="model-preview-title">📦 3D 模型预览</span>
+              {currentPoint?.modelPath && (
+                <span className="model-info-hint">
+                  使用鼠标拖拽旋转，滚轮缩放
+                </span>
               )}
             </div>
-          </div>
-        ))}
-        
-        {isAILoading && (
-          <div className="message ai-message">
-            <div className="message-avatar">🤖</div>
-            <div className="message-content">
-              <div className="typing-indicator">
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-            </div>
+            <ModelViewer
+              modelPath={currentPoint?.modelPath}
+              name={currentPoint?.name}
+              className="chat-model-viewer"
+            />
           </div>
         )}
-        
-        <div ref={messagesEndRef} />
-      </div>
-      
-      {/* 快捷问题 */}
-      {messages.length === 0 && (
-        <div className="quick-questions">
-          {quickQuestions.map((question, index) => (
-            <button
-              key={index}
-              className="quick-question-btn"
-              onClick={() => handleQuickQuestion(question)}
-            >
-              {question}
-            </button>
-          ))}
-        </div>
-      )}
-      
-      {/* 输入区域 */}
-      <div className="chat-input-container">
-        <input
-          ref={inputRef}
-          type="text"
-          className="chat-input"
-          placeholder="输入您的问题..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-          disabled={isAILoading}
-        />
-        <button
-          className="send-button"
-          onClick={handleSend}
-          disabled={!input.trim() || isAILoading}
-        >
-          {isAILoading ? '⏳' : '发送'}
-        </button>
       </div>
     </div>
   )
