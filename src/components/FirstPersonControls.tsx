@@ -30,8 +30,8 @@ const FirstPersonControls = forwardRef((_props, ref) => {
   const velocity = useRef(new Vector3())
   const direction = useRef(new Vector3())
   const MOVE_SPEED = 12.0
-  const JUMP_VELOCITY = 5.0
-  const GRAVITY = -9.8
+  const JUMP_VELOCITY = 10.0 // 增加跳跃高度
+  const GRAVITY = -7.5 // 稍微减小重力，使跳跃感觉更轻盈
   const GROUND_HEIGHT = 1.6
   
   useEffect(() => {

@@ -4,14 +4,14 @@
   right: var(--chat-right, 20px);
   width: 480px;
   max-height: calc(100vh - 260px);
-  background: rgba(20, 20, 20, 0.9);
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  background: linear-gradient(180deg, rgba(26, 26, 32, 0.95) 0%, rgba(18, 18, 24, 0.98) 100%);
+  border-radius: 16px;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
   flex-direction: column;
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   z-index: var(--chat-z-index, 1000);
   transition: box-shadow 0.2s;
 }
@@ -235,16 +235,18 @@
 }
 
 .user-message .message-text {
-  background: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(82, 88, 228, 0.35) 0%, rgba(98, 76, 192, 0.35) 100%);
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(82, 88, 228, 0.4);
   margin-left: auto;
+  box-shadow: 0 4px 12px rgba(82, 88, 228, 0.2);
 }
 
 .ai-message .message-text {
-  background: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.08) 100%);
   color: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .message-time {
@@ -260,32 +262,37 @@
   gap: 4px;
   margin-top: 8px;
   margin-left: 4px;
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.8);
+  padding: 8px 14px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.85);
   font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .speak-button:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 215, 0, 0.4);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25) 0%, rgba(255, 215, 0, 0.15) 100%);
+  border-color: rgba(255, 215, 0, 0.6);
   color: #FFD700;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
 .speak-button:active {
-  transform: translateY(0);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.25);
 }
 
 .speak-button.speaking {
-  background: rgba(255, 215, 0, 0.2);
-  border-color: rgba(255, 215, 0, 0.6);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.2) 100%);
+  border-color: rgba(255, 215, 0, 0.8);
   color: #FFD700;
   animation: pulse 1.5s infinite;
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2);
 }
 
 .speak-button-text {
@@ -345,22 +352,24 @@
 }
 
 .quick-question-btn {
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.8);
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.85);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
   font-size: 14px;
   text-align: left;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .quick-question-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 215, 0, 0.5);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%);
+  border-color: rgba(255, 215, 0, 0.6);
   color: #FFD700;
-  transform: translateX(4px);
+  transform: translateX(6px) translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.25);
 }
 
 /* 输入区域 */
@@ -395,21 +404,23 @@
 }
 
 .send-button {
-  padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, rgba(82, 88, 228, 0.3) 0%, rgba(98, 76, 192, 0.3) 100%);
+  border: 1px solid rgba(82, 88, 228, 0.5);
+  border-radius: 12px;
   color: #fff;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(82, 88, 228, 0.3);
 }
 
 .send-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-3px);
+  background: linear-gradient(135deg, rgba(82, 88, 228, 0.4) 0%, rgba(98, 76, 192, 0.4) 100%);
+  border-color: rgba(82, 88, 228, 0.7);
+  box-shadow: 0 6px 16px rgba(82, 88, 228, 0.4);
 }
 
 .send-button:disabled {
