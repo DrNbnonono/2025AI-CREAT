@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { timeOfDayService, TimeOfDay } from '../../services/timeOfDayService'
 import './TimeOfDayControl.css'
 
@@ -7,11 +7,22 @@ export default function TimeOfDayControl() {
   const [isCycling, setIsCycling] = useState(false)
   const [isAutoMode, setIsAutoMode] = useState(false)
   const [isExpanded, setIsExpanded] = useState(true)
+  const [position, setPosition] = useState({ x: 320, y: 20 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const [hasDragged, setHasDragged] = useState(false)
+  const controlRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // 恢复保存的设置
     timeOfDayService.restoreFromStorage()
     setCurrentTime(timeOfDayService.getCurrentTime())
+
+    // 读取保存的位置
+    const savedPosition = localStorage.getItem('time-of-day-control-position')
+    if (savedPosition) {
+      setPosition(JSON.parse(savedPosition))
+    }
 
     // 订阅时间变化
     const unsubscribe = timeOfDayService.subscribe((time: TimeOfDay) => {
@@ -21,6 +32,11 @@ export default function TimeOfDayControl() {
 
     return unsubscribe
   }, [])
+
+  useEffect(() => {
+    // 保存位置到localStorage
+    localStorage.setItem('time-of-day-control-position', JSON.stringify(position))
+  }, [position])
 
   const handleTimeChange = (time: TimeOfDay) => {
     timeOfDayService.setTime(time)
@@ -47,20 +63,84 @@ export default function TimeOfDayControl() {
     }
   }
 
+  // 拖动功能
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!controlRef.current) return
+    const rect = controlRef.current.getBoundingClientRect()
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    })
+    setIsDragging(true)
+    setHasDragged(false)
+  }
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return
+    const deltaX = Math.abs(e.clientX - (position.x + dragOffset.x))
+    const deltaY = Math.abs(e.clientY - (position.y + dragOffset.y))
+    // 如果移动超过3像素，认为是拖动
+    if (deltaX > 3 || deltaY > 3) {
+      setHasDragged(true)
+    }
+    setPosition({
+      x: e.clientX - dragOffset.x,
+      y: e.clientY - dragOffset.y,
+    })
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  const handleToggleClick = (e: React.MouseEvent) => {
+    // 如果是拖动，不触发展开
+    if (hasDragged) {
+      e.stopPropagation()
+      setHasDragged(false)
+      return
+    }
+    setIsExpanded(true)
+  }
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+  }, [isDragging, dragOffset])
+
   const times = timeOfDayService.getAllTimes()
 
   return (
-    <div className={`time-of-day-control ${!isExpanded ? 'collapsed' : ''}`}>
+    <div
+      ref={controlRef}
+      className={`time-of-day-control ${!isExpanded ? 'collapsed' : ''}`}
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        position: 'fixed',
+        zIndex: isDragging ? 9999 : 1001,
+      }}
+    >
       {!isExpanded ? (
         <button
           className="tod-toggle"
-          onClick={() => setIsExpanded(true)}
+          onMouseDown={handleMouseDown}
+          onClick={handleToggleClick}
           title="展开昼夜模式面板"
         >
           🌍
         </button>
       ) : (
-        <>
+        <div
+          onMouseDown={handleMouseDown}
+          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        >
           <div className="tod-header">
             <span className="tod-icon">🌍</span>
             <span className="tod-title">昼夜模式</span>
@@ -114,7 +194,7 @@ export default function TimeOfDayControl() {
               {timeOfDayService.getConfig(currentTime).label}
             </span>
           </div>
-        </>
+        </div>
       )}
     </div>
   )

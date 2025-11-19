@@ -26,6 +26,12 @@ export default function ModelLibraryPanel() {
     if (Number.isNaN(value)) return 360
     return Math.min(Math.max(value, 280), 520)
   })
+  const [position, setPosition] = useState({ x: 20, y: 150 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const [hasDragged, setHasDragged] = useState(false)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const toggleButtonRef = useRef<HTMLButtonElement>(null)
   const isResizingRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -76,6 +82,21 @@ export default function ModelLibraryPanel() {
     localStorage.setItem('editor:model-lib-width', String(panelWidth))
   }, [panelWidth])
 
+  // 从localStorage读取位置
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const savedPosition = localStorage.getItem('model-library-position')
+    if (savedPosition) {
+      setPosition(JSON.parse(savedPosition))
+    }
+  }, [])
+
+  // 保存位置到localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem('model-library-position', JSON.stringify(position))
+  }, [position])
+
   useEffect(() => {
     if (typeof window === 'undefined') return
     const handleMove = (event: MouseEvent) => {
@@ -96,6 +117,58 @@ export default function ModelLibraryPanel() {
     }
   }, [collapsed])
 
+  // 拖动功能
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const isToggleButton = collapsed
+    const ref = isToggleButton ? toggleButtonRef : panelRef
+    if (!ref.current) return
+
+    const rect = ref.current.getBoundingClientRect()
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    })
+    setIsDragging(true)
+    setHasDragged(false)
+  }
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return
+    const deltaX = Math.abs(e.clientX - (position.x + dragOffset.x))
+    const deltaY = Math.abs(e.clientY - (position.y + dragOffset.y))
+    if (deltaX > 3 || deltaY > 3) {
+      setHasDragged(true)
+    }
+    setPosition({
+      x: e.clientX - dragOffset.x,
+      y: e.clientY - dragOffset.y,
+    })
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  const handleToggleClick = (e: React.MouseEvent) => {
+    if (hasDragged) {
+      e.stopPropagation()
+      setHasDragged(false)
+      return
+    }
+    setCollapsed(false)
+  }
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+  }, [isDragging, dragOffset])
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return files
@@ -110,8 +183,14 @@ export default function ModelLibraryPanel() {
   if (collapsed) {
     return (
       <button
+        ref={toggleButtonRef}
         className="lib-toggle-floating"
-        onClick={() => setCollapsed(false)}
+        onMouseDown={handleMouseDown}
+        onClick={handleToggleClick}
+        style={{
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+        }}
         title="展开模型库"
       >
         📂 模型库
@@ -121,8 +200,15 @@ export default function ModelLibraryPanel() {
 
   return (
     <div
+      ref={panelRef}
       className="model-lib"
-      style={{ width: `${panelWidth}px` }}
+      onMouseDown={handleMouseDown}
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        zIndex: isDragging ? 9999 : 1200,
+        width: `${panelWidth}px`,
+      }}
     >
       <div className="lib-body">
         <div className="lib-header">

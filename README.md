@@ -19,6 +19,8 @@
 - 📱 **响应式设计** - 支持桌面端和移动端
 - ⚡ **高性能优化** - 采用空间索引、纹理缓存、代码分割等技术确保流畅运行
 
+![欢迎页面](.\pictures\welcome.png)
+
 
 ## 🚀 快速开始
 
@@ -156,7 +158,11 @@
 │   │   │   ├── LoadingScreen.tsx / LoadingScreen.css
 │   │   │   ├── TTSControls.tsx / TTSControls.css
 │   │   │   ├── AudioControls.tsx / AudioControls.css
-│   │   │   └── TimeOfDayControl.tsx / TimeOfDayControl.css
+│   │   │   ├── TimeOfDayControl.tsx / TimeOfDayControl.css
+│   │   │   ├── AchievementNotification.tsx / AchievementNotification.css
+│   │   │   ├── ProgressPanel.tsx / ProgressPanel.css
+│   │   │   ├── SceneSelector.tsx / SceneSelector.css
+│   │   │   └── SceneTransition.tsx / SceneTransition.css
 │   │   │
 │   │   ├── Scene.tsx               # Three.js 主场景容器
 │   │   ├── Experience.tsx          # 核心体验逻辑（触发检测、控制切换）
@@ -165,7 +171,8 @@
 │   │   ├── EditorControls.tsx      # 管理员 Orbit 控制器
 │   │   ├── ModelPlacementHelper.tsx# 鼠标射线预览与放置
 │   │   ├── SceneEnvironment.tsx    # 场景环境与模型渲染
-│   │   ├── TriggerZones.tsx        # 触发区域可视化（开发用）
+│   │   ├── TriggerZones.tsx / TriggerZones.css  # 触发区域可视化
+│   │   ├── UniversalModelLoader.tsx # 通用模型加载器
 │   │   └── Admin/                  # 管理员工具模块
 │   │       ├── AdminLogin.tsx / AdminLogin.css
 │   │       ├── ModelManager.tsx / ModelManager.css
@@ -179,18 +186,26 @@
 │   │   └── sceneData.ts         # 默认场景点位与 AI 文案
 │   │
 │   ├── services/                # 业务服务层
-│   │   ├── aiService.ts         # AI API 服务（多提供商、<think> 过滤）
+│   │   ├── aiService.ts         # AI API 服务（多提供商、过滤）
 │   │   ├── timeOfDayService.ts  # 昼夜切换服务
 │   │   ├── ttsService.ts        # TTS 文本转语音服务
-│   │   └── audioService.ts      # 音频控制服务
+│   │   ├── audioService.ts      # 音频控制服务
+│   │   └── progressService.ts   # 进度管理服务
 │   │
 │   ├── store/                   # 全局状态管理（Zustand）
 │   │   ├── useStore.ts          # 玩家/场景/对话状态
 │   │   └── useAdminStore.ts     # 管理员状态
 │   │
+│   ├── types/                   # TypeScript 类型定义
+│   │   └── scenes.ts            # 场景相关类型定义
+│   │
+│   ├── features/                # 功能模块
+│   │   └── shared/              # 共享功能组件
+│   │
 │   ├── App.tsx / App.css        # 应用根组件
 │   ├── main.tsx                 # 应用入口
-│   └── index.css                # 全局样式
+│   ├── index.css                # 全局样式
+│   └── vite-env.d.ts            # Vite 环境类型声明
 │
 ├── scripts/                    # 辅助脚本
 │   ├── scan-models.cjs          # 启动前扫描模型目录并生成 index.json
@@ -217,30 +232,9 @@
 - **`public/models/`**: 存放 3D 模型文件（支持 GLB/GLTF 格式）
   - **`uploaded/`**: 通过管理员界面上传的模型存储目录（自动创建）
 
-### 核心系统
+## 🔧 自定义与扩展（管理员功能）
 
-#### 1. 场景触发器系统
-
-自动检测玩家位置，当进入文物的触发半径时：
-- 显示场景信息面板
-- 自动弹出 AI 讲解
-- 标记文物为已访问
-
-#### 2. AI 对话系统
-
-- 支持 OpenAI 兼容 API
-- 内置智能模拟回复（无需配置即可演示）
-- 上下文感知，基于当前场景提供准确信息
-- 对话历史管理
-
-#### 3. 第一人称控制器
-
-- 基于 PointerLockControls
-- 平滑移动和视角控制
-- 重力和跳跃物理
-- 地面碰撞检测
-
-## 🔧 自定义与扩展
+![管理员模式功能](.\pictures\admin.png)
 
 ### 添加新的场景点位
 
@@ -300,17 +294,16 @@ VITE_AI_PROVIDER=ollama
 
 ![LM Studio配置后问答](./pictures/AI-talk-change.png)
 
-
-
 ### TTS 语音配置
 
 项目支持多种 TTS（文本转语音）提供商，可通过管理员面板配置：
 
 **免费选项：**
-- **浏览器原生** - 使用 Web Speech API，无需配置即可使用
+- **浏览器原生** - 使用 Web Speech API，无需配置即可使用，支持选择语音
 - **Ollama TTS** - 本地大模型语音合成，免费但需安装 Ollama
 
 **付费选项：**
+
 - **Azure 认知服务** - 微软Azure语音服务，音质优秀
 - **百度语音合成** - 对中文优化
 - **科大讯飞** - 识别准确度高
@@ -355,26 +348,6 @@ VITE_AI_PROVIDER=ollama
 - ✅ Edge 90+
 - ⚠️ 移动端浏览器（功能正常，但体验更适合桌面端）
 
-## 🎯 性能优化建议
-
-1. **3D 模型优化**
-   - 使用 GLB 格式并启用 Draco 压缩
-   - 控制模型面数（推荐 < 50K 三角面）
-   - 使用 LOD（细节层次）技术
-
-2. **纹理优化**
-   - 使用 WebP 格式
-   - 纹理尺寸不超过 2048x2048
-   - 启用 mipmap
-   - 已实现纹理缓存，避免重复生成
-
-3. **代码优化**
-   - 已实现代码分割（three-vendor chunk）
-   - 使用 React.memo 减少不必要的重渲染
-   - 避免在每帧中创建新对象
-   - 采用空间索引（8单位网格）进行高效的触发检测
-   - 纹理缓存机制，避免重复创建相同纹理
-
 ## 🐛 常见问题
 
 ### Q: 第一人称视角无法进入？
@@ -394,21 +367,6 @@ A: 在面板顶部有一个resize手柄，鼠标悬停显示，向上拖动可�
 
 ### Q: 上传的模型没有立即显示？
 A: 文件监听系统会在250ms内自动更新index.json，稍等片刻后刷新模型列表即可。
-
-## 🎬 管理员功能
-
-### 模型上传与管理
-- **上传模型**: 点击"📁 上传模型"按钮选择GLB/GLTF文件上传到`public/models/uploaded/`
-- **实时扫描**: dev模式下自动监听models文件夹变化，新增模型自动识别
-- **拖拽放置**: 使用TransformControls精确调整模型位置、旋转、缩放
-- **配置导出/导入**: 场景配置可以导出为JSON，分享给其他用户导入
-
-### 场景编辑快捷键
-- `G` - 切换移动模式
-- `R` - 切换旋转模式
-- `S` - 切换缩放模式
-- `Delete` - 删除选中对象
-- `Escape` - 取消选择
 
 ## 📄 许可证
 

@@ -1,14 +1,11 @@
 .model-manager {
   position: fixed;
-  left: 32px;
-  bottom: 32px;
-  width: 420px;
-  min-height: 300px;
+  width: 450px;
+  min-height: 500px;
   max-height: calc(100vh - 120px);
   background: rgba(26, 32, 44, 0.95);
   border-radius: 16px;
   padding: 20px;
-  padding-top: 32px; /* 为顶部resize handle留空间 */
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   -webkit-backdrop-filter: blur(20px);
@@ -18,33 +15,12 @@
   flex-direction: column;
   gap: 12px;
   overflow: hidden;
+  cursor: grab;
+  user-select: none;
 }
 
-.resize-handle-top {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 20px;
-  cursor: ns-resize;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 16px 16px 0 0;
-  z-index: 10;
-}
-
-.resize-handle-top::after {
-  content: '';
-  width: 60px;
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
-  transition: background 0.2s ease;
-}
-
-.resize-handle-top:hover::after {
-  background: rgba(255, 255, 255, 0.4);
+.model-manager:active {
+  cursor: grabbing;
 }
 
 .manager-header {
@@ -93,15 +69,13 @@
 
 .model-manager-toggle {
   position: fixed;
-  left: 32px;
-  bottom: 90px;
   padding: 10px 18px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(26, 32, 44, 0.96);
   color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
-  cursor: pointer;
+  cursor: grab;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(16px);
   z-index: 1250;
@@ -109,6 +83,11 @@
   align-items: center;
   gap: 8px;
   transition: all 0.2s;
+  user-select: none;
+}
+
+.model-manager-toggle:active {
+  cursor: grabbing;
 }
 
 .model-manager-toggle:hover {

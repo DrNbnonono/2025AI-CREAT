@@ -1,7 +1,5 @@
 .tts-controls {
   position: fixed;
-  top: 20px;
-  right: 20px;
   z-index: 1000;
   animation: slideInRight 0.3s ease-out;
 }
@@ -18,13 +16,22 @@
 }
 
 .tts-panel {
-  background: #FAFAFA;
+  background: rgba(250, 250, 250, 0.95);
   border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
   color: #424242;
   min-width: 280px;
-  border: 1px solid #E0E0E0;
+  max-width: 320px;
+  border: 1px solid #EEEEEE;
+  cursor: grab;
+  user-select: none;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.tts-panel:active {
+  cursor: grabbing;
 }
 
 .tts-header {
@@ -268,9 +275,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: grab;
   transition: all 0.2s;
   box-shadow: 0 2px 8px rgba(129, 199, 132, 0.3);
+  user-select: none;
+}
+
+.tts-toggle:active {
+  cursor: grabbing;
 }
 
 .tts-toggle:hover {

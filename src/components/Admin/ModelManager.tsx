@@ -21,20 +21,16 @@ export default function ModelManager() {
   const deleteScene = useStore((state) => state.deleteScene)
   const setSelectedPoint = useStore((state) => state.setSelectedPoint)
   const currentSceneName = sceneMeta[currentTheme]?.name || currentTheme
-  
-  const panelRef = useRef<HTMLDivElement | null>(null)
-  const resizeState = useRef<{ startY: number; startHeight: number } | null>(null)
+
   const [showAddForm, setShowAddForm] = useState(false)
   const [showSceneForm, setShowSceneForm] = useState(false)
   const [showEditSceneForm, setShowEditSceneForm] = useState(false)
-  const [panelHeight, setPanelHeight] = useState(() => {
-    if (typeof window === 'undefined') return 500
-    const stored = Number.parseInt(localStorage.getItem('model-manager-height') || '', 10)
-    if (Number.isFinite(stored) && stored >= 260) {
-      return stored
-    }
-    return 500
-  })
+  const [position, setPosition] = useState({ x: 20, y: 90 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const [hasDragged, setHasDragged] = useState(false)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const toggleButtonRef = useRef<HTMLButtonElement>(null)
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false
     const stored = localStorage.getItem('model-manager-collapsed')
@@ -77,72 +73,72 @@ export default function ModelManager() {
     refreshModelList()
   }, [refreshModelList])
 
-
+  // 从localStorage读取位置
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const maxHeight = Math.max(260, window.innerHeight - 200)
-    setPanelHeight((height) => Math.min(Math.max(height, 260), maxHeight))
+    const savedPosition = localStorage.getItem('model-manager-position')
+    if (savedPosition) {
+      setPosition(JSON.parse(savedPosition))
+    }
   }, [])
 
-  const handleResizeMove = useCallback((event: MouseEvent) => {
-    if (!resizeState.current) return
-    event.preventDefault()
-    const { startY, startHeight } = resizeState.current
-    const delta = startY - event.clientY
-    const maxHeight = Math.max(260, window.innerHeight - 220)
-    const nextHeight = Math.min(Math.max(startHeight + delta, 260), maxHeight)
-    setPanelHeight(nextHeight)
-  }, [])
+  // 保存位置到localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem('model-manager-position', JSON.stringify(position))
+  }, [position])
 
-  const handleResizeEnd = useCallback(() => {
-    if (!resizeState.current) return
-    resizeState.current = null
-    document.removeEventListener('mousemove', handleResizeMove)
-    document.removeEventListener('mouseup', handleResizeEnd)
-    // 强制重置所有可能的鼠标样式
-    document.body.style.cssText = ''
-    document.body.style.cursor = 'default'
-    document.body.style.userSelect = 'auto'
-    localStorage.setItem('model-manager-height', String(panelRef.current?.offsetHeight ?? panelHeight))
-    setTimeout(() => setIsUiInteracting(false), 0)
-  }, [handleResizeMove, panelHeight, setIsUiInteracting])
+  // 拖动功能
+  const handleMouseDown = (e: ReactMouseEvent) => {
+    const isToggleButton = collapsed
+    const ref = isToggleButton ? toggleButtonRef : panelRef
+    if (!ref.current) return
 
-  // 清理拖拽状态的辅助函数（必须在 handleResizeMove 和 handleResizeEnd 之后定义）
-  const cleanupResizeState = useCallback(() => {
-    if (resizeState.current) {
-      resizeState.current = null
-      document.removeEventListener('mousemove', handleResizeMove)
-      document.removeEventListener('mouseup', handleResizeEnd)
-      document.body.style.cursor = 'default'
-      document.body.style.userSelect = 'auto'
-      setIsUiInteracting(false)
+    const rect = ref.current.getBoundingClientRect()
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    })
+    setIsDragging(true)
+    setHasDragged(false)
+  }
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return
+    const deltaX = Math.abs(e.clientX - (position.x + dragOffset.x))
+    const deltaY = Math.abs(e.clientY - (position.y + dragOffset.y))
+    if (deltaX > 3 || deltaY > 3) {
+      setHasDragged(true)
     }
-  }, [handleResizeMove, handleResizeEnd, setIsUiInteracting])
+    setPosition({
+      x: e.clientX - dragOffset.x,
+      y: e.clientY - dragOffset.y,
+    })
+  }
 
-  const handleResizeStart = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
-    event.stopPropagation()
-    event.preventDefault()
-    if (!panelRef.current) return
-    resizeState.current = {
-      startY: event.clientY,
-      startHeight: panelRef.current.offsetHeight,
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  const handleToggleClick = (e: ReactMouseEvent) => {
+    if (hasDragged) {
+      e.stopPropagation()
+      setHasDragged(false)
+      return
     }
-    setIsUiInteracting(true)
-    document.addEventListener('mousemove', handleResizeMove)
-    document.addEventListener('mouseup', handleResizeEnd)
-    document.body.style.cursor = 'ns-resize'
-    document.body.style.userSelect = 'none'
-  }, [handleResizeMove, handleResizeEnd, setIsUiInteracting])
+    setCollapsed(false)
+  }
 
   useEffect(() => {
-    return () => {
-      document.removeEventListener('mousemove', handleResizeMove)
-      document.removeEventListener('mouseup', handleResizeEnd)
-      // 清理时确保重置鼠标样式
-      document.body.style.cursor = 'default'
-      document.body.style.userSelect = 'auto'
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
     }
-  }, [handleResizeEnd, handleResizeMove])
+  }, [isDragging, dragOffset])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -155,8 +151,14 @@ export default function ModelManager() {
   if (collapsed) {
     return (
       <button
+        ref={toggleButtonRef}
         className="model-manager-toggle"
-        onClick={() => setCollapsed(false)}
+        onMouseDown={handleMouseDown}
+        onClick={handleToggleClick}
+        style={{
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+        }}
         title="展开模型管理面板"
       >
         📦 模型管理
@@ -342,11 +344,15 @@ export default function ModelManager() {
   
   return (
     <div
-      className="model-manager"
       ref={panelRef}
-      style={{ height: panelHeight }}
+      className="model-manager"
+      onMouseDown={handleMouseDown}
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        zIndex: isDragging ? 9999 : 950,
+      }}
     >
-      <div className="resize-handle-top" onMouseDown={handleResizeStart} />
       <div className="manager-header">
         <h3>📦 模型管理</h3>
         <span className="current-scene">当前场景: {currentSceneName}</span>
@@ -354,15 +360,15 @@ export default function ModelManager() {
       </div>
 
       <div className="manager-actions">
-        <button className="action-btn" onClick={() => { cleanupResizeState(); setShowAddForm(true); }}>➕ 添加点位</button>
+        <button className="action-btn" onClick={() => setShowAddForm(true)}>➕ 添加点位</button>
         <button className="action-btn" onClick={() => uploadInputRef.current?.click()} disabled={!!uploadProgress}>
           📁 {uploadProgress || '上传模型'}
         </button>
-        <button className="action-btn" onClick={() => { cleanupResizeState(); handleEditScene(); }}>✏️ 编辑场景</button>
+        <button className="action-btn" onClick={handleEditScene}>✏️ 编辑场景</button>
         {!isDefaultScene && (
-          <button 
-            className="action-btn action-btn-danger" 
-            onClick={() => { cleanupResizeState(); handleDeleteScene(); }}
+          <button
+            className="action-btn action-btn-danger"
+            onClick={handleDeleteScene}
             title="删除当前自定义场景"
           >
             🗑️ 删除场景
@@ -370,7 +376,7 @@ export default function ModelManager() {
         )}
         <button className="action-btn" onClick={handleExport}>📤 导出配置</button>
         <button className="action-btn" onClick={() => document.getElementById('scene-import-input')?.click()}>📥 导入配置</button>
-        <button className="action-btn" onClick={() => { cleanupResizeState(); setShowSceneForm(true); }}>🆕 新建场景</button>
+        <button className="action-btn" onClick={() => setShowSceneForm(true)}>🆕 新建场景</button>
         <input
           id="scene-import-input"
           type="file"

@@ -1,7 +1,5 @@
 .model-lib {
   position: fixed;
-  top: 120px;
-  left: 32px;
   width: 340px;
   max-width: 520px;
   max-height: calc(100vh - 320px); /* 留出上下空间，避免与属性面板冲突 */
@@ -13,19 +11,23 @@
   z-index: 1200;
   overflow: hidden;
   display: flex;
+  cursor: grab;
+  user-select: none;
+}
+
+.model-lib:active {
+  cursor: grabbing;
 }
 
 .lib-toggle-floating {
   position: fixed;
-  bottom: 150px;
-  left: 32px;
   padding: 10px 18px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(20, 20, 26, 0.96);
   color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
-  cursor: pointer;
+  cursor: grab;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(16px);
   z-index: 1250;
@@ -33,6 +35,11 @@
   align-items: center;
   gap: 8px;
   transition: transform 0.2s ease, color 0.2s ease;
+  user-select: none;
+}
+
+.lib-toggle-floating:active {
+  cursor: grabbing;
 }
 
 .lib-toggle-floating:hover {
