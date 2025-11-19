@@ -21,6 +21,7 @@ export interface SceneMeta {
   description: string
   icon?: string
   items?: string[]
+  defaultPrompt?: string
 }
 
 export const defaultSceneMeta: Record<string, SceneMeta> = {

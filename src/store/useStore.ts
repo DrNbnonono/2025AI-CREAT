@@ -91,6 +91,7 @@ function mergeSceneMeta(metaInput: Record<SceneThemeType, SceneMeta> | undefined
         description: meta.description || '管理员自定义场景',
         icon: meta.icon,
         items: meta.items,
+        defaultPrompt: meta.defaultPrompt,
       }
     })
   }
@@ -599,6 +600,7 @@ export const useStore = create<GameState>((set, get) => {
       description: options.description,
       icon: options.icon || '🎭',
       items: [], // 初始为空，点位列表将动态生成
+      defaultPrompt: options.defaultPrompt,
     }
     saveOverrides(overrides)
 
@@ -618,7 +620,7 @@ export const useStore = create<GameState>((set, get) => {
 
   updateSceneMeta: (theme, updates) => {
     const overrides = loadOverrides()
-    
+
     // 更新场景元数据
     overrides.meta[theme] = {
       ...overrides.meta[theme],
@@ -627,10 +629,11 @@ export const useStore = create<GameState>((set, get) => {
       description: updates.description || overrides.meta[theme]?.description || '',
       icon: updates.icon !== undefined ? updates.icon : (overrides.meta[theme]?.icon || '🎭'),
       items: updates.items || overrides.meta[theme]?.items,
+      defaultPrompt: updates.defaultPrompt !== undefined ? updates.defaultPrompt : overrides.meta[theme]?.defaultPrompt,
     }
-    
+
     saveOverrides(overrides)
-    
+
     // 更新状态
     const mergedMeta = mergeSceneMeta(overrides.meta, overrides.custom)
     set({

@@ -56,6 +56,7 @@ export default function ModelManager() {
     name: '',
     description: '',
     icon: '',
+    defaultPrompt: '',
   })
   const [modelOptions, setModelOptions] = useState<string[]>([])
   const [uploadProgress, setUploadProgress] = useState<string | null>(null)
@@ -287,6 +288,7 @@ export default function ModelManager() {
       name: sceneMeta[currentTheme]?.name || '',
       description: sceneMeta[currentTheme]?.description || '',
       icon: sceneMeta[currentTheme]?.icon || '',
+      defaultPrompt: sceneMeta[currentTheme]?.defaultPrompt || '',
     })
     setShowEditSceneForm(true)
   }
@@ -295,6 +297,7 @@ export default function ModelManager() {
     const name = editSceneForm.name.trim()
     const description = editSceneForm.description.trim()
     const icon = editSceneForm.icon.trim()
+    const defaultPrompt = editSceneForm.defaultPrompt.trim()
 
     if (!name) {
       alert('请填写场景名称')
@@ -305,8 +308,9 @@ export default function ModelManager() {
       name,
       description,
       icon: icon || '🎭',
+      defaultPrompt,
     })
-    
+
     setShowEditSceneForm(false)
     alert('场景信息已更新')
   }
@@ -621,6 +625,18 @@ export default function ModelManager() {
                 onChange={(e) => setEditSceneForm({ ...editSceneForm, icon: e.target.value })}
                 placeholder="例如：🎨"
               />
+            </div>
+            <div className="form-field">
+              <label>默认 AI 提示词（可选）</label>
+              <textarea
+                value={editSceneForm.defaultPrompt}
+                onChange={(e) => setEditSceneForm({ ...editSceneForm, defaultPrompt: e.target.value })}
+                rows={6}
+                placeholder="用于自定义该场景的AI导览员身份和讲解风格，留空将使用系统默认提示词。"
+              />
+              <small style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                此设置将覆盖内置场景的默认AI角色定义，优先用于该场景的AI问答。
+              </small>
             </div>
             <div className="form-buttons">
               <button className="btn-save" onClick={handleSaveSceneMeta}>保存</button>

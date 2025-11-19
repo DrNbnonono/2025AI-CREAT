@@ -22,6 +22,10 @@
 ![欢迎页面](./pictures/welcome.png)
 
 
+
+![互动](./pictures/action.png)
+
+
 ## 🚀 快速开始
 
 > 如果已经具备 Node.js 与 npm 环境，直接按照下方“全量部署教程”执行即可。

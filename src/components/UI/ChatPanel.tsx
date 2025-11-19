@@ -13,6 +13,8 @@ export default function ChatPanel() {
   const messages = useStore((state) => state.messages)
   const isAILoading = useStore((state) => state.isAILoading)
   const currentPoint = useStore((state) => state.currentPoint)
+  const currentTheme = useStore((state) => state.currentTheme)
+  const sceneMeta = useStore((state) => state.sceneMeta)
   const addMessage = useStore((state) => state.addMessage)
   const setAILoading = useStore((state) => state.setAILoading)
   const setShowChat = useStore((state) => state.setShowChat)
@@ -132,9 +134,16 @@ export default function ChatPanel() {
     try {
       // 获取当前场景主题
       const currentTheme = useStore.getState().currentTheme
-      
-      // 构建系统提示词（传入场景上下文和主题）
-      const systemPrompt = buildSystemPrompt(currentPoint?.aiContext, currentTheme)
+
+      // 获取当前场景元数据（包含自定义提示词）
+      const currentSceneMeta = useStore.getState().sceneMeta[currentTheme]
+
+      // 构建系统提示词（传入场景上下文、主题和元数据）
+      const systemPrompt = buildSystemPrompt(
+        currentPoint?.aiContext,
+        currentTheme,
+        currentSceneMeta ? { defaultPrompt: currentSceneMeta.defaultPrompt } : undefined
+      )
       
       // 构建对话历史（保留最近10条）
       const chatMessages = [

@@ -254,8 +254,12 @@ function getMockResponse(question: string): string {
 /**
  * 根据场景主题构建专门的系统提示词
  */
-export function buildSystemPrompt(sceneContext?: string, sceneTheme?: string): string {
-  // 场景主题特定的提示词
+export function buildSystemPrompt(
+  sceneContext?: string,
+  sceneTheme?: string,
+  sceneMeta?: { defaultPrompt?: string }
+): string {
+  // 场景主题特定的提示词（仅用于内置场景）
   const themePrompts = {
     museum: `你是一位资深的博物馆讲解员，专精于中国古代文物鉴赏。
 
@@ -300,13 +304,20 @@ export function buildSystemPrompt(sceneContext?: string, sceneTheme?: string): s
 - 描绘古代商人的艰辛旅程
 - 展现丝路沿线的多元文化`,
   }
-  
-  // 选择合适的主题提示词
+
+  // 优先使用场景元数据中的自定义提示词（来自用户创建场景时设置）
   let themeSpecificPrompt = ''
-  if (sceneTheme && sceneTheme in themePrompts) {
+
+  // 1. 优先使用场景元数据中的自定义提示词
+  if (sceneMeta?.defaultPrompt) {
+    themeSpecificPrompt = sceneMeta.defaultPrompt
+  }
+  // 2. 否则使用内置场景的预定义提示词
+  else if (sceneTheme && sceneTheme in themePrompts) {
     themeSpecificPrompt = themePrompts[sceneTheme as keyof typeof themePrompts]
   }
-  
+
+  // 构建基础提示词
   const basePrompt = `${themeSpecificPrompt || '你是一位专业的中国传统文化AI导览员，精通中国历史、文物、艺术和传统文化。'}
 
 核心职责：
@@ -330,10 +341,10 @@ export function buildSystemPrompt(sceneContext?: string, sceneTheme?: string): s
 - 在回答末尾提出相关问题，鼓励继续对话
 
 `
-  
+
   if (sceneContext) {
     return basePrompt + `\n=== 当前场景详细信息 ===\n${sceneContext}\n\n请基于以上信息，结合您的专业知识，为用户提供深入而有趣的讲解。`
   }
-  
+
   return basePrompt
 }
