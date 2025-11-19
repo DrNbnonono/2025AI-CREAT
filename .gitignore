@@ -52,3 +52,6 @@ public/models/**/*.jpeg
 决赛/
 .trae/
 .CLAUDE.md
+
+# 图片
+assets/
